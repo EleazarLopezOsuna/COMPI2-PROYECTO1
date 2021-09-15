@@ -74,10 +74,10 @@ Rule 68    listaParametros -> listaParametros COMA IDENTIFICADOR
 Rule 69    listaParametros -> listaParametros COMA IDENTIFICADOR DOBLEPUNTOS tipo
 Rule 70    listaParametros -> IDENTIFICADOR DOBLEPUNTOS tipo
 Rule 71    listaParametros -> IDENTIFICADOR
-Rule 72    bloqueStruct -> bloqueStruct declaracionAtributo
-Rule 73    bloqueStruct -> declaracionAtributo
-Rule 74    declaracionAtributo -> IDENTIFICADOR DOBLEPUNTOS tipo PUNTOCOMA
-Rule 75    declaracionAtributo -> IDENTIFICADOR PUNTOCOMA
+Rule 72    bloqueStruct -> bloqueStruct declaracionAtributo PUNTOCOMA
+Rule 73    bloqueStruct -> declaracionAtributo PUNTOCOMA
+Rule 74    declaracionAtributo -> IDENTIFICADOR DOBLEPUNTOS tipo
+Rule 75    declaracionAtributo -> IDENTIFICADOR
 Rule 76    dimension -> dimension CORCHETEA expresion CORCHETEC
 Rule 77    dimension -> CORCHETEA expresion CORCHETEC
 Rule 78    construccionStruct -> IDENTIFICADOR PARENTESISA listaAsignaciones PARENTESISC
@@ -147,7 +147,7 @@ PARENTESISA          : 25 26 27 28 29 31 32 56 78 88 89 90 91 92 93 94 95 96 97 
 PARENTESISC          : 25 26 27 28 29 31 32 56 78 88 89 90 91 92 93 94 95 96 97 98 99 100 101 102 103
 POTENCIA             : 85
 PUNTO                : 66 67
-PUNTOCOMA            : 4 5 6 7 14 15 16 30 31 32 33 34 35 38 39 74 75
+PUNTOCOMA            : 4 5 6 7 14 15 16 30 31 32 33 34 35 38 39 72 73
 RESTA                : 82 87
 SUMA                 : 81
 error                : 
@@ -1784,10 +1784,10 @@ state 49
 state 50
 
     (30) struct -> resStruct IDENTIFICADOR . bloqueStruct resEnd PUNTOCOMA
-    (72) bloqueStruct -> . bloqueStruct declaracionAtributo
-    (73) bloqueStruct -> . declaracionAtributo
-    (74) declaracionAtributo -> . IDENTIFICADOR DOBLEPUNTOS tipo PUNTOCOMA
-    (75) declaracionAtributo -> . IDENTIFICADOR PUNTOCOMA
+    (72) bloqueStruct -> . bloqueStruct declaracionAtributo PUNTOCOMA
+    (73) bloqueStruct -> . declaracionAtributo PUNTOCOMA
+    (74) declaracionAtributo -> . IDENTIFICADOR DOBLEPUNTOS tipo
+    (75) declaracionAtributo -> . IDENTIFICADOR
 
     IDENTIFICADOR   shift and go to state 103
 
@@ -3821,31 +3821,30 @@ state 102
 
 state 103
 
-    (74) declaracionAtributo -> IDENTIFICADOR . DOBLEPUNTOS tipo PUNTOCOMA
-    (75) declaracionAtributo -> IDENTIFICADOR . PUNTOCOMA
+    (74) declaracionAtributo -> IDENTIFICADOR . DOBLEPUNTOS tipo
+    (75) declaracionAtributo -> IDENTIFICADOR .
 
     DOBLEPUNTOS     shift and go to state 159
-    PUNTOCOMA       shift and go to state 160
+    PUNTOCOMA       reduce using rule 75 (declaracionAtributo -> IDENTIFICADOR .)
 
 
 state 104
 
     (30) struct -> resStruct IDENTIFICADOR bloqueStruct . resEnd PUNTOCOMA
-    (72) bloqueStruct -> bloqueStruct . declaracionAtributo
-    (74) declaracionAtributo -> . IDENTIFICADOR DOBLEPUNTOS tipo PUNTOCOMA
-    (75) declaracionAtributo -> . IDENTIFICADOR PUNTOCOMA
+    (72) bloqueStruct -> bloqueStruct . declaracionAtributo PUNTOCOMA
+    (74) declaracionAtributo -> . IDENTIFICADOR DOBLEPUNTOS tipo
+    (75) declaracionAtributo -> . IDENTIFICADOR
 
-    resEnd          shift and go to state 161
+    resEnd          shift and go to state 160
     IDENTIFICADOR   shift and go to state 103
 
-    declaracionAtributo            shift and go to state 162
+    declaracionAtributo            shift and go to state 161
 
 state 105
 
-    (73) bloqueStruct -> declaracionAtributo .
+    (73) bloqueStruct -> declaracionAtributo . PUNTOCOMA
 
-    resEnd          reduce using rule 73 (bloqueStruct -> declaracionAtributo .)
-    IDENTIFICADOR   reduce using rule 73 (bloqueStruct -> declaracionAtributo .)
+    PUNTOCOMA       shift and go to state 162
 
 
 state 106
@@ -7872,7 +7871,7 @@ state 158
 
 state 159
 
-    (74) declaracionAtributo -> IDENTIFICADOR DOBLEPUNTOS . tipo PUNTOCOMA
+    (74) declaracionAtributo -> IDENTIFICADOR DOBLEPUNTOS . tipo
     (60) tipo -> . resInt64
     (61) tipo -> . resFloat64
     (62) tipo -> . resBool
@@ -7891,25 +7890,24 @@ state 159
 
 state 160
 
-    (75) declaracionAtributo -> IDENTIFICADOR PUNTOCOMA .
-
-    resEnd          reduce using rule 75 (declaracionAtributo -> IDENTIFICADOR PUNTOCOMA .)
-    IDENTIFICADOR   reduce using rule 75 (declaracionAtributo -> IDENTIFICADOR PUNTOCOMA .)
-
-
-state 161
-
     (30) struct -> resStruct IDENTIFICADOR bloqueStruct resEnd . PUNTOCOMA
 
     PUNTOCOMA       shift and go to state 219
 
 
+state 161
+
+    (72) bloqueStruct -> bloqueStruct declaracionAtributo . PUNTOCOMA
+
+    PUNTOCOMA       shift and go to state 220
+
+
 state 162
 
-    (72) bloqueStruct -> bloqueStruct declaracionAtributo .
+    (73) bloqueStruct -> declaracionAtributo PUNTOCOMA .
 
-    resEnd          reduce using rule 72 (bloqueStruct -> bloqueStruct declaracionAtributo .)
-    IDENTIFICADOR   reduce using rule 72 (bloqueStruct -> bloqueStruct declaracionAtributo .)
+    resEnd          reduce using rule 73 (bloqueStruct -> declaracionAtributo PUNTOCOMA .)
+    IDENTIFICADOR   reduce using rule 73 (bloqueStruct -> declaracionAtributo PUNTOCOMA .)
 
 
 state 163
@@ -7917,7 +7915,7 @@ state 163
     (70) listaParametros -> IDENTIFICADOR . DOBLEPUNTOS tipo
     (71) listaParametros -> IDENTIFICADOR .
 
-    DOBLEPUNTOS     shift and go to state 220
+    DOBLEPUNTOS     shift and go to state 221
     PARENTESISC     reduce using rule 71 (listaParametros -> IDENTIFICADOR .)
     COMA            reduce using rule 71 (listaParametros -> IDENTIFICADOR .)
 
@@ -7928,8 +7926,8 @@ state 164
     (68) listaParametros -> listaParametros . COMA IDENTIFICADOR
     (69) listaParametros -> listaParametros . COMA IDENTIFICADOR DOBLEPUNTOS tipo
 
-    PARENTESISC     shift and go to state 221
-    COMA            shift and go to state 222
+    PARENTESISC     shift and go to state 222
+    COMA            shift and go to state 223
 
 
 state 165
@@ -7988,7 +7986,7 @@ state 165
     resFor          shift and go to state 28
     resReturn       shift and go to state 29
 
-    listaInstrucciones             shift and go to state 223
+    listaInstrucciones             shift and go to state 224
     instruccion                    shift and go to state 3
     asignacion                     shift and go to state 4
     asignacionGlobal               shift and go to state 5
@@ -8006,7 +8004,7 @@ state 166
 
     (33) instruccionIf -> resIf expresion listaInstrucciones resEnd . PUNTOCOMA
 
-    PUNTOCOMA       shift and go to state 224
+    PUNTOCOMA       shift and go to state 225
 
 
 state 167
@@ -8065,7 +8063,7 @@ state 167
     resFor          shift and go to state 28
     resReturn       shift and go to state 29
 
-    listaInstrucciones             shift and go to state 225
+    listaInstrucciones             shift and go to state 226
     instruccion                    shift and go to state 3
     asignacion                     shift and go to state 4
     asignacionGlobal               shift and go to state 5
@@ -8084,8 +8082,8 @@ state 168
     (35) instruccionIf -> resIf expresion listaInstrucciones instruccionElseif . resElse listaInstrucciones resEnd PUNTOCOMA
     (36) instruccionElseif -> instruccionElseif . resElseif expresion listaInstrucciones
 
-    resElse         shift and go to state 226
-    resElseif       shift and go to state 227
+    resElse         shift and go to state 227
+    resElseif       shift and go to state 228
 
 
 state 169
@@ -8181,7 +8179,7 @@ state 169
     resPrint        shift and go to state 21
     resPrintln      shift and go to state 22
 
-    expresion                      shift and go to state 228
+    expresion                      shift and go to state 229
     aritmetica                     shift and go to state 54
     relacionales                   shift and go to state 55
     logicas                        shift and go to state 56
@@ -9323,16 +9321,16 @@ state 185
     PUNTO           shift and go to state 42
     CORCHETEA       shift and go to state 43
 
-    accesoFS                       shift and go to state 229
-    dimension                      shift and go to state 230
+    accesoFS                       shift and go to state 230
+    dimension                      shift and go to state 231
 
 state 186
 
     (78) construccionStruct -> IDENTIFICADOR PARENTESISA listaAsignaciones . PARENTESISC
     (79) listaAsignaciones -> listaAsignaciones . COMA asignacion
 
-    PARENTESISC     shift and go to state 231
-    COMA            shift and go to state 232
+    PARENTESISC     shift and go to state 232
+    COMA            shift and go to state 233
 
 
 state 187
@@ -9444,7 +9442,7 @@ state 190
     (110) logicas -> expresion . OR expresion
     (111) logicas -> expresion . AND expresion
 
-    PARENTESISC     shift and go to state 233
+    PARENTESISC     shift and go to state 234
     DOSPUNTOS       shift and go to state 108
     SUMA            shift and go to state 109
     RESTA           shift and go to state 110
@@ -9481,7 +9479,7 @@ state 191
     (110) logicas -> expresion . OR expresion
     (111) logicas -> expresion . AND expresion
 
-    COMA            shift and go to state 234
+    COMA            shift and go to state 235
     DOSPUNTOS       shift and go to state 108
     SUMA            shift and go to state 109
     RESTA           shift and go to state 110
@@ -9518,7 +9516,7 @@ state 192
     (110) logicas -> expresion . OR expresion
     (111) logicas -> expresion . AND expresion
 
-    PARENTESISC     shift and go to state 235
+    PARENTESISC     shift and go to state 236
     DOSPUNTOS       shift and go to state 108
     SUMA            shift and go to state 109
     RESTA           shift and go to state 110
@@ -9555,7 +9553,7 @@ state 193
     (110) logicas -> expresion . OR expresion
     (111) logicas -> expresion . AND expresion
 
-    PARENTESISC     shift and go to state 236
+    PARENTESISC     shift and go to state 237
     DOSPUNTOS       shift and go to state 108
     SUMA            shift and go to state 109
     RESTA           shift and go to state 110
@@ -9592,7 +9590,7 @@ state 194
     (110) logicas -> expresion . OR expresion
     (111) logicas -> expresion . AND expresion
 
-    PARENTESISC     shift and go to state 237
+    PARENTESISC     shift and go to state 238
     DOSPUNTOS       shift and go to state 108
     SUMA            shift and go to state 109
     RESTA           shift and go to state 110
@@ -9629,7 +9627,7 @@ state 195
     (110) logicas -> expresion . OR expresion
     (111) logicas -> expresion . AND expresion
 
-    PARENTESISC     shift and go to state 238
+    PARENTESISC     shift and go to state 239
     DOSPUNTOS       shift and go to state 108
     SUMA            shift and go to state 109
     RESTA           shift and go to state 110
@@ -9651,14 +9649,14 @@ state 196
 
     (94) nativa -> resParse PARENTESISA resInt64 . COMA expresion PARENTESISC
 
-    COMA            shift and go to state 239
+    COMA            shift and go to state 240
 
 
 state 197
 
     (95) nativa -> resParse PARENTESISA resFloat64 . COMA expresion PARENTESISC
 
-    COMA            shift and go to state 240
+    COMA            shift and go to state 241
 
 
 state 198
@@ -9680,7 +9678,7 @@ state 198
     (110) logicas -> expresion . OR expresion
     (111) logicas -> expresion . AND expresion
 
-    PARENTESISC     shift and go to state 241
+    PARENTESISC     shift and go to state 242
     DOSPUNTOS       shift and go to state 108
     SUMA            shift and go to state 109
     RESTA           shift and go to state 110
@@ -9717,7 +9715,7 @@ state 199
     (110) logicas -> expresion . OR expresion
     (111) logicas -> expresion . AND expresion
 
-    PARENTESISC     shift and go to state 242
+    PARENTESISC     shift and go to state 243
     DOSPUNTOS       shift and go to state 108
     SUMA            shift and go to state 109
     RESTA           shift and go to state 110
@@ -9754,7 +9752,7 @@ state 200
     (110) logicas -> expresion . OR expresion
     (111) logicas -> expresion . AND expresion
 
-    PARENTESISC     shift and go to state 243
+    PARENTESISC     shift and go to state 244
     DOSPUNTOS       shift and go to state 108
     SUMA            shift and go to state 109
     RESTA           shift and go to state 110
@@ -9791,7 +9789,7 @@ state 201
     (110) logicas -> expresion . OR expresion
     (111) logicas -> expresion . AND expresion
 
-    PARENTESISC     shift and go to state 244
+    PARENTESISC     shift and go to state 245
     DOSPUNTOS       shift and go to state 108
     SUMA            shift and go to state 109
     RESTA           shift and go to state 110
@@ -9813,7 +9811,7 @@ state 202
 
     (100) nativa -> resPop PARENTESISA IDENTIFICADOR . PARENTESISC
 
-    PARENTESISC     shift and go to state 245
+    PARENTESISC     shift and go to state 246
 
 
 state 203
@@ -9835,7 +9833,7 @@ state 203
     (110) logicas -> expresion . OR expresion
     (111) logicas -> expresion . AND expresion
 
-    PARENTESISC     shift and go to state 246
+    PARENTESISC     shift and go to state 247
     DOSPUNTOS       shift and go to state 108
     SUMA            shift and go to state 109
     RESTA           shift and go to state 110
@@ -9872,7 +9870,7 @@ state 204
     (110) logicas -> expresion . OR expresion
     (111) logicas -> expresion . AND expresion
 
-    PARENTESISC     shift and go to state 247
+    PARENTESISC     shift and go to state 248
     DOSPUNTOS       shift and go to state 108
     SUMA            shift and go to state 109
     RESTA           shift and go to state 110
@@ -9909,7 +9907,7 @@ state 205
     (110) logicas -> expresion . OR expresion
     (111) logicas -> expresion . AND expresion
 
-    PARENTESISC     shift and go to state 248
+    PARENTESISC     shift and go to state 249
     DOSPUNTOS       shift and go to state 108
     SUMA            shift and go to state 109
     RESTA           shift and go to state 110
@@ -9931,7 +9929,7 @@ state 206
 
     (38) instruccionWhile -> resWhile expresion listaInstrucciones resEnd . PUNTOCOMA
 
-    PUNTOCOMA       shift and go to state 249
+    PUNTOCOMA       shift and go to state 250
 
 
 state 207
@@ -10020,7 +10018,7 @@ state 207
     resFor          shift and go to state 28
     resReturn       shift and go to state 29
 
-    listaInstrucciones             shift and go to state 250
+    listaInstrucciones             shift and go to state 251
     instruccion                    shift and go to state 3
     asignacion                     shift and go to state 4
     asignacionGlobal               shift and go to state 5
@@ -10272,7 +10270,7 @@ state 217
     resPrint        shift and go to state 21
     resPrintln      shift and go to state 22
 
-    expresion                      shift and go to state 251
+    expresion                      shift and go to state 252
     aritmetica                     shift and go to state 54
     relacionales                   shift and go to state 55
     logicas                        shift and go to state 56
@@ -10282,9 +10280,9 @@ state 217
 
 state 218
 
-    (74) declaracionAtributo -> IDENTIFICADOR DOBLEPUNTOS tipo . PUNTOCOMA
+    (74) declaracionAtributo -> IDENTIFICADOR DOBLEPUNTOS tipo .
 
-    PUNTOCOMA       shift and go to state 252
+    PUNTOCOMA       reduce using rule 74 (declaracionAtributo -> IDENTIFICADOR DOBLEPUNTOS tipo .)
 
 
 state 219
@@ -10314,6 +10312,14 @@ state 219
 
 state 220
 
+    (72) bloqueStruct -> bloqueStruct declaracionAtributo PUNTOCOMA .
+
+    resEnd          reduce using rule 72 (bloqueStruct -> bloqueStruct declaracionAtributo PUNTOCOMA .)
+    IDENTIFICADOR   reduce using rule 72 (bloqueStruct -> bloqueStruct declaracionAtributo PUNTOCOMA .)
+
+
+state 221
+
     (70) listaParametros -> IDENTIFICADOR DOBLEPUNTOS . tipo
     (60) tipo -> . resInt64
     (61) tipo -> . resFloat64
@@ -10331,7 +10337,7 @@ state 220
 
     tipo                           shift and go to state 253
 
-state 221
+state 222
 
     (31) declararFuncion -> resFuncion IDENTIFICADOR PARENTESISA listaParametros PARENTESISC . listaInstrucciones resEnd PUNTOCOMA
     (2) listaInstrucciones -> . listaInstrucciones instruccion
@@ -10401,7 +10407,7 @@ state 221
     instruccionFor                 shift and go to state 13
     retorno                        shift and go to state 16
 
-state 222
+state 223
 
     (68) listaParametros -> listaParametros COMA . IDENTIFICADOR
     (69) listaParametros -> listaParametros COMA . IDENTIFICADOR DOBLEPUNTOS tipo
@@ -10409,7 +10415,7 @@ state 222
     IDENTIFICADOR   shift and go to state 255
 
 
-state 223
+state 224
 
     (32) declararFuncion -> resFuncion IDENTIFICADOR PARENTESISA PARENTESISC listaInstrucciones . resEnd PUNTOCOMA
     (2) listaInstrucciones -> listaInstrucciones . instruccion
@@ -10478,7 +10484,7 @@ state 223
     instruccionFor                 shift and go to state 13
     retorno                        shift and go to state 16
 
-state 224
+state 225
 
     (33) instruccionIf -> resIf expresion listaInstrucciones resEnd PUNTOCOMA .
 
@@ -10503,7 +10509,7 @@ state 224
     resElseif       reduce using rule 33 (instruccionIf -> resIf expresion listaInstrucciones resEnd PUNTOCOMA .)
 
 
-state 225
+state 226
 
     (34) instruccionIf -> resIf expresion listaInstrucciones resElse listaInstrucciones . resEnd PUNTOCOMA
     (2) listaInstrucciones -> listaInstrucciones . instruccion
@@ -10572,7 +10578,7 @@ state 225
     instruccionFor                 shift and go to state 13
     retorno                        shift and go to state 16
 
-state 226
+state 227
 
     (35) instruccionIf -> resIf expresion listaInstrucciones instruccionElseif resElse . listaInstrucciones resEnd PUNTOCOMA
     (2) listaInstrucciones -> . listaInstrucciones instruccion
@@ -10642,7 +10648,7 @@ state 226
     instruccionFor                 shift and go to state 13
     retorno                        shift and go to state 16
 
-state 227
+state 228
 
     (36) instruccionElseif -> instruccionElseif resElseif . expresion listaInstrucciones
     (40) expresion -> . aritmetica
@@ -10743,7 +10749,7 @@ state 227
     llamadaFuncion                 shift and go to state 65
     construccionStruct             shift and go to state 67
 
-state 228
+state 229
 
     (37) instruccionElseif -> resElseif expresion . listaInstrucciones
     (57) expresion -> expresion . DOSPUNTOS expresion
@@ -10843,7 +10849,7 @@ state 228
     instruccionFor                 shift and go to state 13
     retorno                        shift and go to state 16
 
-state 229
+state 230
 
     (53) expresion -> IDENTIFICADOR accesoFS .
     (23) asignacion -> IDENTIFICADOR accesoFS . IGUAL expresion
@@ -10870,7 +10876,7 @@ state 229
     PUNTO           shift and go to state 92
 
 
-state 230
+state 231
 
     (58) expresion -> IDENTIFICADOR dimension .
     (24) asignacion -> IDENTIFICADOR dimension . IGUAL expresion
@@ -10897,7 +10903,7 @@ state 230
     CORCHETEA       shift and go to state 94
 
 
-state 231
+state 232
 
     (78) construccionStruct -> IDENTIFICADOR PARENTESISA listaAsignaciones PARENTESISC .
 
@@ -10938,7 +10944,7 @@ state 231
     CORCHETEC       reduce using rule 78 (construccionStruct -> IDENTIFICADOR PARENTESISA listaAsignaciones PARENTESISC .)
 
 
-state 232
+state 233
 
     (79) listaAsignaciones -> listaAsignaciones COMA . asignacion
     (21) asignacion -> . IDENTIFICADOR IGUAL expresion DOBLEPUNTOS tipo
@@ -10950,7 +10956,7 @@ state 232
 
     asignacion                     shift and go to state 261
 
-state 233
+state 234
 
     (88) nativa -> resLog10 PARENTESISA expresion PARENTESISC .
 
@@ -10991,7 +10997,7 @@ state 233
     CORCHETEC       reduce using rule 88 (nativa -> resLog10 PARENTESISA expresion PARENTESISC .)
 
 
-state 234
+state 235
 
     (89) nativa -> resLog PARENTESISA expresion COMA . expresion PARENTESISC
     (40) expresion -> . aritmetica
@@ -11092,7 +11098,7 @@ state 234
     llamadaFuncion                 shift and go to state 65
     construccionStruct             shift and go to state 67
 
-state 235
+state 236
 
     (90) nativa -> resSin PARENTESISA expresion PARENTESISC .
 
@@ -11133,7 +11139,7 @@ state 235
     CORCHETEC       reduce using rule 90 (nativa -> resSin PARENTESISA expresion PARENTESISC .)
 
 
-state 236
+state 237
 
     (91) nativa -> resCos PARENTESISA expresion PARENTESISC .
 
@@ -11174,7 +11180,7 @@ state 236
     CORCHETEC       reduce using rule 91 (nativa -> resCos PARENTESISA expresion PARENTESISC .)
 
 
-state 237
+state 238
 
     (92) nativa -> resTan PARENTESISA expresion PARENTESISC .
 
@@ -11215,7 +11221,7 @@ state 237
     CORCHETEC       reduce using rule 92 (nativa -> resTan PARENTESISA expresion PARENTESISC .)
 
 
-state 238
+state 239
 
     (93) nativa -> resSqrt PARENTESISA expresion PARENTESISC .
 
@@ -11256,7 +11262,7 @@ state 238
     CORCHETEC       reduce using rule 93 (nativa -> resSqrt PARENTESISA expresion PARENTESISC .)
 
 
-state 239
+state 240
 
     (94) nativa -> resParse PARENTESISA resInt64 COMA . expresion PARENTESISC
     (40) expresion -> . aritmetica
@@ -11357,7 +11363,7 @@ state 239
     llamadaFuncion                 shift and go to state 65
     construccionStruct             shift and go to state 67
 
-state 240
+state 241
 
     (95) nativa -> resParse PARENTESISA resFloat64 COMA . expresion PARENTESISC
     (40) expresion -> . aritmetica
@@ -11458,7 +11464,7 @@ state 240
     llamadaFuncion                 shift and go to state 65
     construccionStruct             shift and go to state 67
 
-state 241
+state 242
 
     (96) nativa -> resTrunc PARENTESISA expresion PARENTESISC .
 
@@ -11499,7 +11505,7 @@ state 241
     CORCHETEC       reduce using rule 96 (nativa -> resTrunc PARENTESISA expresion PARENTESISC .)
 
 
-state 242
+state 243
 
     (97) nativa -> resFloat PARENTESISA expresion PARENTESISC .
 
@@ -11540,7 +11546,7 @@ state 242
     CORCHETEC       reduce using rule 97 (nativa -> resFloat PARENTESISA expresion PARENTESISC .)
 
 
-state 243
+state 244
 
     (98) nativa -> resStringFunc PARENTESISA expresion PARENTESISC .
 
@@ -11581,7 +11587,7 @@ state 243
     CORCHETEC       reduce using rule 98 (nativa -> resStringFunc PARENTESISA expresion PARENTESISC .)
 
 
-state 244
+state 245
 
     (99) nativa -> resTypeof PARENTESISA expresion PARENTESISC .
 
@@ -11622,7 +11628,7 @@ state 244
     CORCHETEC       reduce using rule 99 (nativa -> resTypeof PARENTESISA expresion PARENTESISC .)
 
 
-state 245
+state 246
 
     (100) nativa -> resPop PARENTESISA IDENTIFICADOR PARENTESISC .
 
@@ -11663,7 +11669,7 @@ state 245
     CORCHETEC       reduce using rule 100 (nativa -> resPop PARENTESISA IDENTIFICADOR PARENTESISC .)
 
 
-state 246
+state 247
 
     (101) nativa -> resLength PARENTESISA expresion PARENTESISC .
 
@@ -11704,7 +11710,7 @@ state 246
     CORCHETEC       reduce using rule 101 (nativa -> resLength PARENTESISA expresion PARENTESISC .)
 
 
-state 247
+state 248
 
     (102) nativa -> resUppercase PARENTESISA expresion PARENTESISC .
 
@@ -11745,7 +11751,7 @@ state 247
     CORCHETEC       reduce using rule 102 (nativa -> resUppercase PARENTESISA expresion PARENTESISC .)
 
 
-state 248
+state 249
 
     (103) nativa -> resLowercase PARENTESISA expresion PARENTESISC .
 
@@ -11786,7 +11792,7 @@ state 248
     CORCHETEC       reduce using rule 103 (nativa -> resLowercase PARENTESISA expresion PARENTESISC .)
 
 
-state 249
+state 250
 
     (38) instruccionWhile -> resWhile expresion listaInstrucciones resEnd PUNTOCOMA .
 
@@ -11811,7 +11817,7 @@ state 249
     resElseif       reduce using rule 38 (instruccionWhile -> resWhile expresion listaInstrucciones resEnd PUNTOCOMA .)
 
 
-state 250
+state 251
 
     (39) instruccionFor -> resFor IDENTIFICADOR resIn expresion listaInstrucciones . resEnd PUNTOCOMA
     (2) listaInstrucciones -> listaInstrucciones . instruccion
@@ -11880,7 +11886,7 @@ state 250
     instruccionFor                 shift and go to state 13
     retorno                        shift and go to state 16
 
-state 251
+state 252
 
     (27) llamadaFuncion -> resPush NOT PARENTESISA expresion COMA expresion . PARENTESISC
     (57) expresion -> expresion . DOSPUNTOS expresion
@@ -11915,14 +11921,6 @@ state 251
     DIFERENTE       shift and go to state 120
     OR              shift and go to state 121
     AND             shift and go to state 122
-
-
-state 252
-
-    (74) declaracionAtributo -> IDENTIFICADOR DOBLEPUNTOS tipo PUNTOCOMA .
-
-    resEnd          reduce using rule 74 (declaracionAtributo -> IDENTIFICADOR DOBLEPUNTOS tipo PUNTOCOMA .)
-    IDENTIFICADOR   reduce using rule 74 (declaracionAtributo -> IDENTIFICADOR DOBLEPUNTOS tipo PUNTOCOMA .)
 
 
 state 253

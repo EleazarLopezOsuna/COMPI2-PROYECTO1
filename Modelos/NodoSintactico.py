@@ -1,12 +1,13 @@
 class NodoSintactico():
 
     # Constructor de la clase nodo
-    def __init__(self, nombre, valor, linea, columna):
+    def __init__(self, nombre, valor, linea, columna, numero):
         self.nombre = nombre
         self.valor = valor
         self.hijos = []
         self.linea = linea
         self.columna = columna
+        self.numero = numero
     
     # Agrega un hijo
     def addHijo(self, hijo):
@@ -22,4 +23,7 @@ class NodoSintactico():
 
     # Obtiene su valor
     def getValor(self):
-        return self.valor
+        return str(self.valor)
+    
+    def getNumero(self):
+        return str(self.numero)

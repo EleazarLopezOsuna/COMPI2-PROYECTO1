@@ -16,21 +16,16 @@ class Arbol():
 
     # Funcion recursiva capaz de recorrer el arbol e ir generando el codigo necesario para poder graficar
     def graficarNodo(self, nodo):
-        self.grafo = ""
         cadena = ""
-        for hijos in nodo.getHijo():
-            nodoPadre = ""
-            nodoHijo = ""
-            if(nodo.getValor() != None):
-                nodoPadre = "\"" + nodo.getNumNodo() + "_" + nodo.getNombre() + "\"" + "[label = \"" + nodo.getValor() + "\"];"
-            else:
-                nodoPadre = "\"" + nodo.getNumNodo() + "_" + nodo.getNombre() + "\"" + "[label = \"" + nodo.getNombre() + "\"];"
-            if(hijos.getValor() != None):
-                nodoHijo = "\"" + hijos.getNumNodo() + "_" + hijos.getNombre() + "\"" + "[label = \"" + hijos.getValor() + "\"];"
-            else:
-                nodoHijo = "\"" + hijos.getNumNodo() + "_" + hijos.getNombre() + "\"" + "[label = \"" + hijos.getNombre() + "\"];"
-            apuntadorPadre = "\"" + nodo.getNumNodo() + "_" + nodo.getNombre() + "\""
-            apuntadorHijo = "\"" + hijos.getNumNodo() + "_" + hijos.getNombre() + "\""
-            cadena += nodoPadre + "\n" + nodoHijo + "\n" + apuntadorPadre + "->" + apuntadorHijo + ";\n"
-            cadena += self.graficarNodo(hijos)
+        print(nodo.getNombre())
+        if nodo != None:
+            for hijos in nodo.hijos:
+                nodoPadre = ""
+                nodoHijo = ""
+                nodoPadre = "\"" + nodo.getNumero() + "_" + nodo.getNombre() + "\"" + "[label = \"" + nodo.getValor() + "\"];"
+                nodoHijo = "\"" + hijos.getNumero() + "_" + hijos.getNombre() + "\"" + "[label = \"" + hijos.getValor() + "\"];"
+                apuntadorPadre = "\"" + nodo.getNumero() + "_" + nodo.getNombre() + "\""
+                apuntadorHijo = "\"" + hijos.getNumero() + "_" + hijos.getNombre() + "\""
+                cadena += nodoPadre + "\n" + nodoHijo + "\n" + apuntadorPadre + "->" + apuntadorHijo + ";\n"
+                cadena += self.graficarNodo(hijos)
         return cadena
