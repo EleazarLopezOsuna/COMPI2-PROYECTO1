@@ -10,7 +10,7 @@ class NodoSintactico():
     
     # Agrega un hijo
     def addHijo(self, hijo):
-        self.hijos.push(hijo)
+        self.hijos.append(hijo)
     
     # Setea el nombre
     def getNombre(self):

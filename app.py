@@ -24,7 +24,7 @@ def home():
 def output():
     global tmp_val
     result = parse(tmp_val)
-    return render_template('output.html', input=result.getConsola())
+    return render_template('output.html', input=result)
 
 if __name__ == "__main__":
     app.run()
