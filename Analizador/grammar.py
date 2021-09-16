@@ -1349,6 +1349,7 @@ def p_listaExpresiones_2(t):
 
 import ply.yacc as yacc
 from Graficador.Arbol import Arbol
+from Analizador.Semantico import Semantico
 parser = yacc.yacc()
 
 def getErrores():
@@ -1365,5 +1366,10 @@ def parse(inp):
     global input
     input = inp
     arbol =  Arbol()
-    resultado = arbol.getDot(parser.parse(inp))
+    root = parser.parse(inp)
+    resultado = arbol.getDot(root)
+    analisisSemantico = Semantico(root)
+    analisisSemantico.iniciarAnalisisSemantico()
+    for consola in analisisSemantico.consola:
+        print(str(consola))
     return resultado

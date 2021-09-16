@@ -17,7 +17,6 @@ class Arbol():
     # Funcion recursiva capaz de recorrer el arbol e ir generando el codigo necesario para poder graficar
     def graficarNodo(self, nodo):
         cadena = ""
-        print(nodo.getNombre())
         if nodo != None:
             for hijos in nodo.hijos:
                 nodoPadre = ""

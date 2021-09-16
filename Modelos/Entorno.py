@@ -1,11 +1,10 @@
-from Simbolo import EnumTipo
-
 class Entorno():
 
     # Constructor de la clase, nos solicita un entorno anterior. El entorno global tendra como anterior None
-    def __init__(self, anterior):
+    def __init__(self, anterior, nombre):
         self.tabla = {}
         self.anterior = anterior
+        self.nombre = nombre
 
     # Funcion que inserta un variable dentro de nuestro entorno {True: Insertado, False: Error}
     def insertar(self, nombre, simbolo):

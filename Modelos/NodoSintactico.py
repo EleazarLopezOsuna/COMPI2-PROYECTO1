@@ -27,3 +27,12 @@ class NodoSintactico():
     
     def getNumero(self):
         return str(self.numero)
+
+    def getHijo(self, posicion):
+        return self.hijos[posicion]
+
+    def getLinea(self):
+        return self.linea
+
+    def getColumna(self):
+        return self.columna
