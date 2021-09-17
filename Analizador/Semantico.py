@@ -141,13 +141,25 @@ class Semantico():
         print("Funcion print")
 
     def resolverExpresion(self, root, entorno):
-        tmp = Expresion
-        sim = Simbolo
         if(root.getNombre() == "EXPRESION"):
             if(len(root.hijos) == 1):
                 return self.resolverExpresion(root.getHijo(0), entorno)
             elif((len(root.hijos) == 3) and (root.getHijo(1).getNombre() == "EXPRESION")):
                 return self.resolverExpresion(root.getHijo(1), entorno)
+            elif((len(root.hijos) == 3) and (root.getHijo(1).getNombre() == "LISTAEXPRESIONES")):
+                # La expresion es un arreglo
+                retorno = Expresion(EnumTipo.arreglo, [])
+                for hijo in root.getHijo(1).hijos:
+                    # Obtengo todos los hijos
+                    if(hijo.getNombre() == "EXPRESION"):
+                        expresion = self.resolverExpresion(hijo, entorno)
+                        if(expresion.getTipo() != EnumTipo.error):
+                            simbolo = Simbolo(expresion.getTipo(), expresion.getValor(), -1, -1)
+                            retorno.valor.append(simbolo)
+                        else:
+                            # Reportar error
+                            print('Se encontro error')
+                return retorno
         if(root.getNombre() == "RESTA"):
             resultadoPrimero = self.resolverExpresion(root.getHijo(0), entorno)
             resultadoSegundo = self.resolverExpresion(root.getHijo(2), entorno)

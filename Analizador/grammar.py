@@ -1387,6 +1387,8 @@ import ply.yacc as yacc
 from Graficador.Arbol import Arbol
 from Analizador.Semantico import Semantico
 from Modelos.Simbolo import Simbolo
+from Modelos.Simbolo import EnumTipo
+
 parser = yacc.yacc()
 
 def getErrores():
@@ -1414,5 +1416,25 @@ def parse(inp):
     for entorno in analisisSemantico.entornos:
         for key in entorno.tabla:
             simbolo = entorno.tabla[key]
-            print('Nombre: ' + key + ' Tipo: ' + str(simbolo.getTipo()) + ' Valor: ' + str(simbolo.getValor()) + ' Fila: ' + simbolo.getFila() + ' Columna: ' + simbolo.getColumna())
+            if simbolo.getTipo() == EnumTipo.arreglo:
+                cadena = "[" + concatItems(simbolo) + "]"
+                print('Nombre: ' + key + ' Tipo: ' + str(simbolo.getTipo()) + ' Valor: ' + cadena + ' Fila: ' + simbolo.getFila() + ' Columna: ' + simbolo.getColumna())
+            else:
+                print('Nombre: ' + key + ' Tipo: ' + str(simbolo.getTipo()) + ' Valor: ' + str(simbolo.getValor()) + ' Fila: ' + simbolo.getFila() + ' Columna: ' + simbolo.getColumna())
     return resultado
+
+def concatItems(simbolo):
+    retorno = ""
+    for sim in simbolo.getValor():
+        if sim.getTipo() == EnumTipo.arreglo:
+            cadena = "[" + concatItems(sim) + "]"
+            if len(retorno) == 0:
+                retorno = cadena
+            else:
+                retorno = retorno + ", " + cadena
+        else:
+            if len(retorno) == 0:
+                retorno = str(sim.getValor())
+            else:
+                retorno = retorno + ", " + str(sim.getValor())
+    return retorno
