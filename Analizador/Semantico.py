@@ -38,8 +38,49 @@ class Semantico():
                 for hijo in root.hijos:
                     self.recorrer(hijo, entorno)
             if(root.getNombre() == "LLAMADAFUNCION"):
-                #print("")
                 self.ejecutarLlamadaFuncion(root, entorno)
+            if(root.getNombre() == "BLOQUEIF"):
+                self.ejecutarBloqueIf(root, entorno)
+    
+    def ejecutarBloqueIf(self, root, entorno):
+        condicion = self.resolverExpresion(root.getHijo(1), entorno)
+        if(len(root.hijos) == 5): # Es un if
+            if(condicion.getTipo() != EnumTipo.error):
+                if(condicion.getTipo() == EnumTipo.boleano):
+                    if(str(condicion.getValor()) == "True"):
+                        self.recorrer(root.getHijo(2), entorno)
+        elif(len(root.hijos) == 6):
+            verificar = root.getHijo(3)
+            if(verificar.getNombre() == "ELSE"): # Es If-else
+                if(condicion.getTipo() != EnumTipo.error):
+                    if(condicion.getTipo() == EnumTipo.boleano):
+                        if(str(condicion.getValor()) == "True"):
+                            self.recorrer(root.getHijo(2), entorno)
+                        else:
+                            self.recorrer(root.getHijo(3).getHijo(1), entorno)
+            else:
+                condicion = self.resolverExpresion(verificar.getHijo(1), entorno)
+                if(condicion.getTipo() != EnumTipo.error):
+                    if(condicion.getTipo() == EnumTipo.boleano):
+                        if(str(condicion.getValor()) == "True"):
+                            self.recorrer(verificar.getHijo(2), entorno)
+                        else:
+                            for hijo in verificar.hijos:
+                                if(hijo.getValor() == "ELSEIF"):
+                                    resultado = self.ejecutarElseIf(hijo, entorno)
+                                    if(resultado == True):
+                                        break
+                                if(hijo.getValor() == "ELSE"):
+                                    self.recorrer(hijo.getHijo(1), entorno)
+
+    def ejecutarElseIf(self, root, entorno):
+        condicion = self.resolverExpresion(root.getHijo(1), entorno)
+        if(condicion.getTipo() != EnumTipo.error):
+            if(condicion.getTipo() == EnumTipo.boleano):
+                if(str(condicion.getValor()) == "True"):
+                    self.recorrer(root.getHijo(2), entorno)
+                    return True
+        return False
 
     def ejecutarLlamadaFuncion(self, root, entorno):
         nombreFuncion = root.getHijo(0)
@@ -47,6 +88,8 @@ class Semantico():
             self.ejecutarPrintln(root.getHijo(2), entorno)
         elif(nombreFuncion.getNombre() == "PRINT"):
             self.ejecutarPrint(root.getHijo(2), entorno)
+        else:
+            print("OTRA FUNCION")
 
     def ejecutarPrintln(self, root, entorno):
         for hijo in root.hijos:
@@ -62,7 +105,10 @@ class Semantico():
         tmp = Expresion
         sim = Simbolo
         if(root.getNombre() == "EXPRESION"):
-            return self.resolverExpresion(root.getHijo(0), entorno)
+            if(len(root.hijos) == 1):
+                return self.resolverExpresion(root.getHijo(0), entorno)
+            elif((len(root.hijos) == 3) and (root.getHijo(1).getNombre() == "EXPRESION")):
+                return self.resolverExpresion(root.getHijo(1), entorno)
         if(root.getNombre() == "RESTA"):
             resultadoPrimero = self.resolverExpresion(root.getHijo(0), entorno)
             resultadoSegundo = self.resolverExpresion(root.getHijo(2), entorno)
@@ -81,10 +127,11 @@ class Semantico():
         if(root.getNombre() == "DIVISION"):
             resultadoPrimero = self.resolverExpresion(root.getHijo(0), entorno)
             resultadoSegundo = self.resolverExpresion(root.getHijo(2), entorno)
-            if(int(resultadoSegundo.getValor()) != 0):
-                return self.operarDivision(resultadoPrimero, resultadoSegundo, entorno, root.getHijo(0).getLinea, root.getHijo(0).getColumna)
-            else:
-                return Expresion(EnumTipo.error, Error(root.getHijo(0).getLinea, root.getHijo(0).getColumna, "Semantico", "Division por 0 no definida"))
+            if(resultadoSegundo.getTipo() == EnumTipo.entero or resultadoSegundo.getTipo() == EnumTipo.flotante):
+                if(int(resultadoSegundo.getValor()) != 0):
+                    return self.operarDivision(resultadoPrimero, resultadoSegundo, entorno, root.getHijo(0).getLinea, root.getHijo(0).getColumna)
+                else:
+                    return Expresion(EnumTipo.error, Error(root.getHijo(0).getLinea, root.getHijo(0).getColumna, "Semantico", "Division por 0 no definida"))
         if(root.getNombre() == "POTENCIA"):
             resultadoPrimero = self.resolverExpresion(root.getHijo(0), entorno)
             resultadoSegundo = self.resolverExpresion(root.getHijo(2), entorno)
@@ -102,6 +149,52 @@ class Semantico():
         if(root.getNombre() == "TANGENTE"):
             resultadoPrimero = self.resolverExpresion(root.getHijo(2), entorno)
             return self.operarTangente(resultadoPrimero, entorno, root.getHijo(2).getLinea, root.getHijo(2).getColumna)
+        if(root.getNombre() == "LOGNATURAL"):
+            resultadoPrimero = self.resolverExpresion(root.getHijo(2), entorno)
+            if(resultadoPrimero.getTipo() == EnumTipo.entero or resultadoPrimero.getTipo() == EnumTipo.flotante):
+                if(int(resultadoPrimero.getValor()) > 0):
+                    return self.operarLogNatural(resultadoPrimero, entorno, root.getHijo(2).getLinea, root.getHijo(2).getColumna)
+                else:
+                    return Expresion(EnumTipo.error, Error(root.getHijo(2).getLinea, root.getHijo(2).getColumna, "Semantico", "Rango fuera de limite"))
+        if(root.getNombre() == "LOGBASE"):
+            resultadoPrimero = self.resolverExpresion(root.getHijo(2), entorno)
+            resultadoSegundo = self.resolverExpresion(root.getHijo(4), entorno)
+            if((resultadoPrimero.getTipo() == EnumTipo.entero or resultadoPrimero.getTipo() == EnumTipo.flotante) and (resultadoSegundo.getTipo() == EnumTipo.entero or resultadoSegundo.getTipo() == EnumTipo.flotante)):
+                if((int(resultadoPrimero.getValor()) > 0) and (int(resultadoSegundo.getValor()) > 0)):
+                    return self.operarLogBase(resultadoPrimero, resultadoSegundo, entorno, root.getHijo(2).getLinea, root.getHijo(2).getColumna)
+                else:
+                    return Expresion(EnumTipo.error, Error(root.getHijo(2).getLinea, root.getHijo(2).getColumna, "Semantico", "Rango fuera de limite"))
+        if(root.getNombre() == "RAIZ"):
+            resultadoPrimero = self.resolverExpresion(root.getHijo(2), entorno)
+            if(resultadoPrimero.getTipo() == EnumTipo.entero or resultadoPrimero.getTipo() == EnumTipo.flotante):
+                if(int(resultadoPrimero.getValor()) >= 0):
+                    return self.operarRaiz(resultadoPrimero, entorno, root.getHijo(2).getLinea, root.getHijo(2).getColumna)
+                else:
+                    return Expresion(EnumTipo.error, Error(root.getHijo(2).getLinea, root.getHijo(2).getColumna, "Semantico", "Rango fuera de limite"))
+        if(root.getNombre() == "PARSEINT"):
+            resultadoPrimero = self.resolverExpresion(root.getHijo(4), entorno)
+            return self.operarParseInt(resultadoPrimero, entorno, root.getHijo(4).getLinea, root.getHijo(4).getColumna)
+        if(root.getNombre() == "PARSEFLOAT"):
+            resultadoPrimero = self.resolverExpresion(root.getHijo(4), entorno)
+            return self.operarParseFloat(resultadoPrimero, entorno, root.getHijo(4).getLinea, root.getHijo(4).getColumna)
+        if(root.getNombre() == "TRUNCAR"):
+            resultadoPrimero = self.resolverExpresion(root.getHijo(2), entorno)
+            return self.operarTruncar(resultadoPrimero, entorno, root.getHijo(2).getLinea, root.getHijo(2).getColumna)
+        if(root.getNombre() == "HACERUPPERCASE"):
+            resultadoPrimero = self.resolverExpresion(root.getHijo(2), entorno)
+            return self.operarUppercase(resultadoPrimero, entorno, root.getHijo(2).getLinea, root.getHijo(2).getColumna)
+        if(root.getNombre() == "HACERLOWERCASE"):
+            resultadoPrimero = self.resolverExpresion(root.getHijo(2), entorno)
+            return self.operarLowercase(resultadoPrimero, entorno, root.getHijo(2).getLinea, root.getHijo(2).getColumna)
+        if(root.getNombre() == "CONVERTIRFLOAT"):
+            resultadoPrimero = self.resolverExpresion(root.getHijo(2), entorno)
+            return self.operarParseFloat(resultadoPrimero, entorno, root.getHijo(2).getLinea, root.getHijo(2).getColumna)
+        if(root.getNombre() == "OBTENERTIPO"):
+            resultadoPrimero = self.resolverExpresion(root.getHijo(2), entorno)
+            return self.operarTypeOf(resultadoPrimero, entorno, root.getHijo(2).getLinea, root.getHijo(2).getColumna)
+        if(root.getNombre() == "CONVERTIRSTRING"):
+            resultadoPrimero = self.resolverExpresion(root.getHijo(2), entorno)
+            return self.operarConvertirString(resultadoPrimero, entorno, root.getHijo(2).getLinea, root.getHijo(2).getColumna)
         if(root.getNombre() == "ENTERO"):
             return Expresion(EnumTipo.entero, root.getValor())
         if(root.getNombre() == "CADENA"):
@@ -113,9 +206,44 @@ class Semantico():
         if(root.getNombre() == "NOTHING"):
             return Expresion(EnumTipo.nulo, None)
         if(root.getNombre() == "FALSE"):
-            return Expresion(EnumTipo.boleano, True)
-        if(root.getNombre() == "TRUE"):
             return Expresion(EnumTipo.boleano, False)
+        if(root.getNombre() == "TRUE"):
+            return Expresion(EnumTipo.boleano, True)
+        if(root.getNombre() == "MAYOR"):
+            resultadoPrimero = self.resolverExpresion(root.getHijo(0), entorno)
+            resultadoSegundo = self.resolverExpresion(root.getHijo(2), entorno)
+            return self.operarMayor(resultadoPrimero, resultadoSegundo, entorno, root.getHijo(0).getLinea, root.getHijo(0).getColumna)
+        if(root.getNombre() == "MENOR"):
+            resultadoPrimero = self.resolverExpresion(root.getHijo(0), entorno)
+            resultadoSegundo = self.resolverExpresion(root.getHijo(2), entorno)
+            return self.operarMenor(resultadoPrimero, resultadoSegundo, entorno, root.getHijo(0).getLinea, root.getHijo(0).getColumna)
+        if(root.getNombre() == "MAYORIGUAL"):
+            resultadoPrimero = self.resolverExpresion(root.getHijo(0), entorno)
+            resultadoSegundo = self.resolverExpresion(root.getHijo(2), entorno)
+            return self.operarMayorIgual(resultadoPrimero, resultadoSegundo, entorno, root.getHijo(0).getLinea, root.getHijo(0).getColumna)
+        if(root.getNombre() == "MENORIGUAL"):
+            resultadoPrimero = self.resolverExpresion(root.getHijo(0), entorno)
+            resultadoSegundo = self.resolverExpresion(root.getHijo(2), entorno)
+            return self.operarMenorIgual(resultadoPrimero, resultadoSegundo, entorno, root.getHijo(0).getLinea, root.getHijo(0).getColumna)
+        if(root.getNombre() == "IGUALDAD"):
+            resultadoPrimero = self.resolverExpresion(root.getHijo(0), entorno)
+            resultadoSegundo = self.resolverExpresion(root.getHijo(2), entorno)
+            return self.operarIgualdad(resultadoPrimero, resultadoSegundo, entorno, root.getHijo(0).getLinea, root.getHijo(0).getColumna)
+        if(root.getNombre() == "DIFERENCIA"):
+            resultadoPrimero = self.resolverExpresion(root.getHijo(0), entorno)
+            resultadoSegundo = self.resolverExpresion(root.getHijo(2), entorno)
+            return self.operarDiferente(resultadoPrimero, resultadoSegundo, entorno, root.getHijo(0).getLinea, root.getHijo(0).getColumna)
+        if(root.getNombre() == "OR"):
+            resultadoPrimero = self.resolverExpresion(root.getHijo(0), entorno)
+            resultadoSegundo = self.resolverExpresion(root.getHijo(2), entorno)
+            return self.operarOr(resultadoPrimero, resultadoSegundo, entorno, root.getHijo(0).getLinea, root.getHijo(0).getColumna)
+        if(root.getNombre() == "AND"):
+            resultadoPrimero = self.resolverExpresion(root.getHijo(0), entorno)
+            resultadoSegundo = self.resolverExpresion(root.getHijo(2), entorno)
+            return self.operarAnd(resultadoPrimero, resultadoSegundo, entorno, root.getHijo(0).getLinea, root.getHijo(0).getColumna)
+        if(root.getNombre() == "NOT"):
+            resultadoPrimero = self.resolverExpresion(root.getHijo(0), entorno)
+            return self.operarNot(resultadoPrimero, entorno, root.getHijo(0).getLinea, root.getHijo(0).getColumna)
 
     def operarResta(self, primero, segundo, entorno, linea, columna):
         if(primero.getTipo() == EnumTipo.entero):
@@ -288,10 +416,299 @@ class Semantico():
             return Expresion(EnumTipo.error, Error(linea, columna, "Semantico", "Seno no definido para el tipo " + str(primero.getTipo())))
 
     def operarTangente(self, primero, entorno, linea, columna):
-        print(primero.getValor())
         if(primero.getTipo() == EnumTipo.entero):
             return Expresion(EnumTipo.flotante, math.tan(int(primero.getValor())))
         elif(primero.getTipo() == EnumTipo.flotante):
             return Expresion(EnumTipo.flotante, math.tan(float(primero.getValor())))
         else:
             return Expresion(EnumTipo.error, Error(linea, columna, "Semantico", "Tangente no definido para el tipo " + str(primero.getTipo())))
+
+    def operarLogNatural(self, primero, entorno, linea, columna):
+        if(primero.getTipo() == EnumTipo.entero):
+            return Expresion(EnumTipo.flotante, math.log10(int(primero.getValor())))
+        elif(primero.getTipo() == EnumTipo.flotante):
+            return Expresion(EnumTipo.flotante, math.log10(float(primero.getValor())))
+        else:
+            return Expresion(EnumTipo.error, Error(linea, columna, "Semantico", "Logaritmo natural no definido para el tipo " + str(primero.getTipo())))
+
+    def operarLogBase(self, primero, segundo, entorno, linea, columna):
+        if(primero.getTipo() == EnumTipo.entero):
+            if(segundo.getTipo() == EnumTipo.entero):
+                return Expresion(EnumTipo.flotante, math.log(int(primero.getValor()), int(segundo.getValor())))
+            elif(segundo.getTipo() == EnumTipo.flotante):
+                return Expresion(EnumTipo.flotante, math.log(int(primero.getValor()), float(segundo.getValor())))
+            else:
+                return Expresion(EnumTipo.error, Error(linea, columna, "Semantico", "Logaritmo no definido para los tipos " + str(primero.getTipo()) + " y " + str(segundo.getTipo())))
+        elif(primero.getTipo() == EnumTipo.flotante):
+            if(segundo.getTipo() == EnumTipo.entero):
+                return Expresion(EnumTipo.flotante, math.log(float(primero.getValor()), int(segundo.getValor())))
+            elif(segundo.getTipo == EnumTipo.flotante):
+                return Expresion(EnumTipo.flotante, math.log(float(primero.getValor()), float(segundo.getValor())))
+            else:
+                return Expresion(EnumTipo.error, Error(linea, columna, "Semantico", "Logaritmo no definido para los tipos " + str(primero.getTipo()) + " y " + str(segundo.getTipo())))
+        else:
+            return Expresion(EnumTipo.error, Error(linea, columna, "Semantico", "Logaritmo natural no definido para el tipo " + str(primero.getTipo())))
+    
+    def operarRaiz(self, primero, entorno, linea, columna):
+        if(primero.getTipo() == EnumTipo.entero):
+            return Expresion(EnumTipo.flotante, math.sqrt(int(primero.getValor())))
+        elif(primero.getTipo() == EnumTipo.flotante):
+            return Expresion(EnumTipo.flotante, math.sqrt(float(primero.getValor())))
+        else:
+            return Expresion(EnumTipo.error, Error(linea, columna, "Semantico", "Raiz no definida para el tipo " + str(primero.getTipo())))
+
+    def operarRaiz(self, primero, entorno, linea, columna):
+        if(primero.getTipo() == EnumTipo.entero):
+            return Expresion(EnumTipo.flotante, math.sqrt(int(primero.getValor())))
+        elif(primero.getTipo() == EnumTipo.flotante):
+            return Expresion(EnumTipo.flotante, math.sqrt(float(primero.getValor())))
+        else:
+            return Expresion(EnumTipo.error, Error(linea, columna, "Semantico", "Raiz no definida para el tipo " + str(primero.getTipo())))
+    
+    def intTryParse(self, value):
+        try:
+            int(value)
+            return True
+        except ValueError:
+            return False
+
+    def floatTryParse(self, value):
+        try:
+            float(value)
+            return True
+        except ValueError:
+            return False
+
+    def operarParseInt(self, primero, entorno, linea, columna):
+        if(self.intTryParse(primero.getValor())):
+            if(primero.getTipo() == EnumTipo.cadena):
+                return Expresion(EnumTipo.entero, int(primero.getValor()))
+            elif(primero.getTipo() == EnumTipo.flotante):
+                return Expresion(EnumTipo.entero, int(primero.getValor()))
+            else:
+                return Expresion(EnumTipo.error, Error(linea, columna, "Semantico", "ParseInt no definido para el tipo " + str(primero.getTipo())))
+        else:
+            return Expresion(EnumTipo.error, Error(linea, columna, "Semantico", "El valor " + str(primero.getValor()) + " no es numerico"))
+
+    def operarParseFloat(self, primero, entorno, linea, columna):
+        if(self.floatTryParse(primero.getValor())):
+            if(primero.getTipo() == EnumTipo.cadena):
+                return Expresion(EnumTipo.entero, float(primero.getValor()))
+            elif(primero.getTipo() == EnumTipo.flotante):
+                return Expresion(EnumTipo.entero, float(primero.getValor()))
+            else:
+                return Expresion(EnumTipo.error, Error(linea, columna, "Semantico", "ParseFloat no definido para el tipo " + str(primero.getTipo())))
+        else:
+            return Expresion(EnumTipo.error, Error(linea, columna, "Semantico", "El valor " + str(primero.getValor()) + " no es numerico"))
+
+    def operarTruncar(self, primero, entorno, linea, columna):
+        if(primero.getTipo() == EnumTipo.flotante):
+            return Expresion(EnumTipo.entero, math.trunc(float(primero.getValor())))
+        else:
+            return Expresion(EnumTipo.error, Error(linea, columna, "Semantico", "Trunc no definido para el tipo " + str(primero.getTipo())))
+
+    def operarUppercase(self, primero, entorno, linea, columna):
+        if(primero.getTipo() == EnumTipo.cadena):
+            cadena = str(primero.getValor())
+            return Expresion(EnumTipo.cadena, cadena.upper())
+        else:
+            return Expresion(EnumTipo.error, Error(linea, columna, "Semantico", "Uppercase no definido para el tipo " + str(primero.getTipo())))
+
+    def operarLowercase(self, primero, entorno, linea, columna):
+        if(primero.getTipo() == EnumTipo.cadena):
+            cadena = str(primero.getValor())
+            return Expresion(EnumTipo.cadena, cadena.lower())
+        else:
+            return Expresion(EnumTipo.error, Error(linea, columna, "Semantico", "Lowercase no definido para el tipo " + str(primero.getTipo())))
+
+    def operarTypeOf(self, primero, entorno, linea, columna):
+        cadena = ""
+        if(primero.getTipo() == EnumTipo.cadena):
+            cadena = "string"
+        if(primero.getTipo() == EnumTipo.entero):
+            cadena = "int"
+        if(primero.getTipo() == EnumTipo.flotante):
+            cadena = "float"
+        if(primero.getTipo() == EnumTipo.caracter):
+            cadena = "char"
+        if(primero.getTipo() == EnumTipo.arreglo):
+            cadena = "array"
+        if(primero.getTipo() == EnumTipo.boleano):
+            cadena = "bool"
+        if(primero.getTipo() == EnumTipo.nulo):
+            cadena = "nothing"
+        if(primero.getTipo() == EnumTipo.funcion):
+            cadena = "function"
+        if(primero.getTipo() == EnumTipo.mutable):
+            cadena = "struct"
+        if(primero.getTipo() == EnumTipo.nomutable):
+            cadena = "struct"
+        return Expresion(EnumTipo.cadena, cadena)
+
+    def operarConvertirString(self, primero, entorno, linea, columna):
+        if(primero.getTipo() != EnumTipo.error):
+            return Expresion(EnumTipo.cadena, str(primero.getValor()))
+        else:
+            return Expresion(EnumTipo.error, Error(linea, columna, "Semantico", "string no definido para el tipo " + str(primero.getTipo())))
+
+    def operarMayor(self, primero, segundo, entorno, linea, columna):
+        if(primero.getTipo() == EnumTipo.entero):
+            if(segundo.getTipo() == EnumTipo.entero):
+                return Expresion(EnumTipo.boleano, int(primero.getValor()) > int(segundo.getValor()))
+            elif(segundo.getTipo() == EnumTipo.entero):
+                return Expresion(EnumTipo.boleano, float(primero.getValor()) > float(segundo.getValor()))
+            else:
+                return Expresion(EnumTipo.error, Error(linea, columna, "Semantico", "Mayor que no definido entre los tipos " + str(primero.getTipo()) + " y " + str(segundo.getTipo())))
+        elif(primero.getTipo() == EnumTipo.flotante):
+            if(segundo.getTipo() == EnumTipo.entero):
+                return Expresion(EnumTipo.boleano, float(primero.getValor()) > float(segundo.getValor()))
+            elif(segundo.getTipo() == EnumTipo.flotante):
+                return Expresion(EnumTipo.boleano, float(primero.getValor()) > float(segundo.getValor()))
+            else:
+                return Expresion(EnumTipo.error, Error(linea, columna, "Semantico", "Mayor que no definido entre los tipos " + str(primero.getTipo()) + " y " + str(segundo.getTipo())))
+        elif(primero.getTipo() == EnumTipo.cadena):
+            if(segundo.getTipo() == EnumTipo.cadena):
+                return Expresion(EnumTipo.boleano, str(primero.getValor()) > str(segundo.getValor()))
+            else:
+                return Expresion(EnumTipo.error, Error(linea, columna, "Semantico", "Mayor que no definido entre los tipos " + str(primero.getTipo()) + " y " + str(segundo.getTipo())))
+        else:
+            return Expresion(EnumTipo.error, Error(linea, columna, "Semantico", "Mayor que no definido entre los tipos " + str(primero.getTipo()) + " y " + str(segundo.getTipo())))
+
+    def operarMenor(self, primero, segundo, entorno, linea, columna):
+        if(primero.getTipo() == EnumTipo.entero):
+            if(segundo.getTipo() == EnumTipo.entero):
+                return Expresion(EnumTipo.boleano, int(primero.getValor()) < int(segundo.getValor()))
+            elif(segundo.getTipo() == EnumTipo.entero):
+                return Expresion(EnumTipo.boleano, float(primero.getValor()) < float(segundo.getValor()))
+            else:
+                return Expresion(EnumTipo.error, Error(linea, columna, "Semantico", "Menor que no definido entre los tipos " + str(primero.getTipo()) + " y " + str(segundo.getTipo())))
+        elif(primero.getTipo() == EnumTipo.flotante):
+            if(segundo.getTipo() == EnumTipo.entero):
+                return Expresion(EnumTipo.boleano, float(primero.getValor()) < float(segundo.getValor()))
+            elif(segundo.getTipo() == EnumTipo.flotante):
+                return Expresion(EnumTipo.boleano, float(primero.getValor()) < float(segundo.getValor()))
+            else:
+                return Expresion(EnumTipo.error, Error(linea, columna, "Semantico", "Menor que no definido entre los tipos " + str(primero.getTipo()) + " y " + str(segundo.getTipo())))
+        elif(primero.getTipo() == EnumTipo.cadena):
+            if(segundo.getTipo() == EnumTipo.cadena):
+                return Expresion(EnumTipo.boleano, str(primero.getValor()) < str(segundo.getValor()))
+            else:
+                return Expresion(EnumTipo.error, Error(linea, columna, "Semantico", "Menor que no definido entre los tipos " + str(primero.getTipo()) + " y " + str(segundo.getTipo())))
+        else:
+            return Expresion(EnumTipo.error, Error(linea, columna, "Semantico", "Menor que no definido entre los tipos " + str(primero.getTipo()) + " y " + str(segundo.getTipo())))
+
+    def operarMayorIgual(self, primero, segundo, entorno, linea, columna):
+        if(primero.getTipo() == EnumTipo.entero):
+            if(segundo.getTipo() == EnumTipo.entero):
+                return Expresion(EnumTipo.boleano, int(primero.getValor()) >= int(segundo.getValor()))
+            elif(segundo.getTipo() == EnumTipo.entero):
+                return Expresion(EnumTipo.boleano, float(primero.getValor()) >= float(segundo.getValor()))
+            else:
+                return Expresion(EnumTipo.error, Error(linea, columna, "Semantico", "Mayor o igual que no definido entre los tipos " + str(primero.getTipo()) + " y " + str(segundo.getTipo())))
+        elif(primero.getTipo() == EnumTipo.flotante):
+            if(segundo.getTipo() == EnumTipo.entero):
+                return Expresion(EnumTipo.boleano, float(primero.getValor()) >= float(segundo.getValor()))
+            elif(segundo.getTipo() == EnumTipo.flotante):
+                return Expresion(EnumTipo.boleano, float(primero.getValor()) >= float(segundo.getValor()))
+            else:
+                return Expresion(EnumTipo.error, Error(linea, columna, "Semantico", "Mayor o igual que no definido entre los tipos " + str(primero.getTipo()) + " y " + str(segundo.getTipo())))
+        elif(primero.getTipo() == EnumTipo.cadena):
+            if(segundo.getTipo() == EnumTipo.cadena):
+                return Expresion(EnumTipo.boleano, str(primero.getValor()) >= str(segundo.getValor()))
+            else:
+                return Expresion(EnumTipo.error, Error(linea, columna, "Semantico", "Mayor o igual que no definido entre los tipos " + str(primero.getTipo()) + " y " + str(segundo.getTipo())))
+        else:
+            return Expresion(EnumTipo.error, Error(linea, columna, "Semantico", "Mayor o igual que no definido entre los tipos " + str(primero.getTipo()) + " y " + str(segundo.getTipo())))
+
+    def operarMenorIgual(self, primero, segundo, entorno, linea, columna):
+        if(primero.getTipo() == EnumTipo.entero):
+            if(segundo.getTipo() == EnumTipo.entero):
+                return Expresion(EnumTipo.boleano, int(primero.getValor()) <= int(segundo.getValor()))
+            elif(segundo.getTipo() == EnumTipo.entero):
+                return Expresion(EnumTipo.boleano, float(primero.getValor()) <= float(segundo.getValor()))
+            else:
+                return Expresion(EnumTipo.error, Error(linea, columna, "Semantico", "Menor o igual que no definido entre los tipos " + str(primero.getTipo()) + " y " + str(segundo.getTipo())))
+        elif(primero.getTipo() == EnumTipo.flotante):
+            if(segundo.getTipo() == EnumTipo.entero):
+                return Expresion(EnumTipo.boleano, float(primero.getValor()) <= float(segundo.getValor()))
+            elif(segundo.getTipo() == EnumTipo.flotante):
+                return Expresion(EnumTipo.boleano, float(primero.getValor()) <= float(segundo.getValor()))
+            else:
+                return Expresion(EnumTipo.error, Error(linea, columna, "Semantico", "Menor o igual que no definido entre los tipos " + str(primero.getTipo()) + " y " + str(segundo.getTipo())))
+        elif(primero.getTipo() == EnumTipo.cadena):
+            if(segundo.getTipo() == EnumTipo.cadena):
+                return Expresion(EnumTipo.boleano, str(primero.getValor()) <= str(segundo.getValor()))
+            else:
+                return Expresion(EnumTipo.error, Error(linea, columna, "Semantico", "Menor o igual que no definido entre los tipos " + str(primero.getTipo()) + " y " + str(segundo.getTipo())))
+        else:
+            return Expresion(EnumTipo.error, Error(linea, columna, "Semantico", "Menor o igual que no definido entre los tipos " + str(primero.getTipo()) + " y " + str(segundo.getTipo())))
+
+    def operarIgualdad(self, primero, segundo, entorno, linea, columna):
+        if(primero.getTipo() == EnumTipo.entero):
+            if(segundo.getTipo() == EnumTipo.entero):
+                return Expresion(EnumTipo.boleano, int(primero.getValor()) == int(segundo.getValor()))
+            elif(segundo.getTipo() == EnumTipo.entero):
+                return Expresion(EnumTipo.boleano, float(primero.getValor()) == float(segundo.getValor()))
+            else:
+                return Expresion(EnumTipo.error, Error(linea, columna, "Semantico", "Igualdad no definida entre los tipos " + str(primero.getTipo()) + " y " + str(segundo.getTipo())))
+        elif(primero.getTipo() == EnumTipo.flotante):
+            if(segundo.getTipo() == EnumTipo.entero):
+                return Expresion(EnumTipo.boleano, float(primero.getValor()) == float(segundo.getValor()))
+            elif(segundo.getTipo() == EnumTipo.flotante):
+                return Expresion(EnumTipo.boleano, float(primero.getValor()) == float(segundo.getValor()))
+            else:
+                return Expresion(EnumTipo.error, Error(linea, columna, "Semantico", "Igualdad no definida entre los tipos " + str(primero.getTipo()) + " y " + str(segundo.getTipo())))
+        elif(primero.getTipo() == EnumTipo.cadena):
+            if(segundo.getTipo() == EnumTipo.cadena):
+                return Expresion(EnumTipo.boleano, str(primero.getValor()) == str(segundo.getValor()))
+            else:
+                return Expresion(EnumTipo.error, Error(linea, columna, "Semantico", "Igualdad no definida entre los tipos " + str(primero.getTipo()) + " y " + str(segundo.getTipo())))
+        else:
+            return Expresion(EnumTipo.error, Error(linea, columna, "Semantico", "Igualdad no definida entre los tipos " + str(primero.getTipo()) + " y " + str(segundo.getTipo())))
+
+    def operarDiferente(self, primero, segundo, entorno, linea, columna):
+        if(primero.getTipo() == EnumTipo.entero):
+            if(segundo.getTipo() == EnumTipo.entero):
+                return Expresion(EnumTipo.boleano, int(primero.getValor()) != int(segundo.getValor()))
+            elif(segundo.getTipo() == EnumTipo.entero):
+                return Expresion(EnumTipo.boleano, float(primero.getValor()) != float(segundo.getValor()))
+            else:
+                return Expresion(EnumTipo.error, Error(linea, columna, "Semantico", "Diferencia no definida entre los tipos " + str(primero.getTipo()) + " y " + str(segundo.getTipo())))
+        elif(primero.getTipo() == EnumTipo.flotante):
+            if(segundo.getTipo() == EnumTipo.entero):
+                return Expresion(EnumTipo.boleano, float(primero.getValor()) != float(segundo.getValor()))
+            elif(segundo.getTipo() == EnumTipo.flotante):
+                return Expresion(EnumTipo.boleano, float(primero.getValor()) != float(segundo.getValor()))
+            else:
+                return Expresion(EnumTipo.error, Error(linea, columna, "Semantico", "Diferencia no definida entre los tipos " + str(primero.getTipo()) + " y " + str(segundo.getTipo())))
+        elif(primero.getTipo() == EnumTipo.cadena):
+            if(segundo.getTipo() == EnumTipo.cadena):
+                return Expresion(EnumTipo.boleano, str(primero.getValor()) != str(segundo.getValor()))
+            else:
+                return Expresion(EnumTipo.error, Error(linea, columna, "Semantico", "Diferencia no definida entre los tipos " + str(primero.getTipo()) + " y " + str(segundo.getTipo())))
+        else:
+            return Expresion(EnumTipo.error, Error(linea, columna, "Semantico", "Diferencia no definida entre los tipos " + str(primero.getTipo()) + " y " + str(segundo.getTipo())))
+
+    def operarOr(self, primero, segundo, entorno, linea, columna):
+        if(primero.getTipo() == EnumTipo.boleano):
+            if(segundo.getTipo() == EnumTipo.boleano):
+                return Expresion(EnumTipo.boleano, primero.getValor() or segundo.getValor())
+            else:
+                return Expresion(EnumTipo.error, Error(linea, columna, "Semantico", "Operacion Or no definida entre los tipos " + str(primero.getTipo()) + " y " + str(segundo.getTipo())))
+        else:
+            return Expresion(EnumTipo.error, Error(linea, columna, "Semantico", "Operacion Or no definida entre los tipos " + str(primero.getTipo()) + " y " + str(segundo.getTipo())))
+
+    def operarAnd(self, primero, segundo, entorno, linea, columna):
+        if(primero.getTipo() == EnumTipo.boleano):
+            if(segundo.getTipo() == EnumTipo.boleano):
+                return Expresion(EnumTipo.boleano, primero.getValor() and segundo.getValor())
+            else:
+                return Expresion(EnumTipo.error, Error(linea, columna, "Semantico", "Operacion And no definida entre los tipos " + str(primero.getTipo()) + " y " + str(segundo.getTipo())))
+        else:
+            return Expresion(EnumTipo.error, Error(linea, columna, "Semantico", "Operacion And no definida entre los tipos " + str(primero.getTipo()) + " y " + str(segundo.getTipo())))
+
+    def operarNot(self, primero, entorno, linea, columna):
+        if(primero.getTipo() == EnumTipo.boleano):
+            return Expresion(EnumTipo.boleano, not primero.getValor())
+        else:
+            return Expresion(EnumTipo.error, Error(linea, columna, "Semantico", "Operacion Not no definida para el tipo " + str(primero.getTipo())))

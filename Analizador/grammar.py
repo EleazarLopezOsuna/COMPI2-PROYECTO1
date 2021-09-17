@@ -11,6 +11,7 @@ sys.setrecursionlimit(3000)
 errores = []
 global contador
 contador = 0
+
 reservadas = {
     'nothing': 'resNothing',
     'Int64':'resInt64',
@@ -81,11 +82,11 @@ tokens = [
     'CORCHETEC',
     'PARENTESISA',
     'PARENTESISC',
-    'IDENTIFICADOR',
     'ENTERO',
     'FLOTANTE',
     'CADENA',
-    'CARACTER'
+    'CARACTER',
+    'IDENTIFICADOR'
 ] + list(reservadas.values())
 
 t_DOBLEPUNTOS       = r'\:\:'
@@ -136,8 +137,7 @@ def t_ENTERO(t):
 
 def t_IDENTIFICADOR(t):
     r'[a-zA-Z_][a-zA-Z0-9_]*'
-    global contador
-    t.type = reservadas.get(t.value.lower(),'IDENTIFICADOR')
+    t.type = reservadas.get(t.value,'IDENTIFICADOR')
     return t
 
 def t_CADENA(t):
@@ -527,9 +527,12 @@ def p_instruccionIf_2(t):
     contador += 1
     t[0].addHijo(t[2])
     t[0].addHijo(t[3])
-    t[0].addHijo(NodoSintactico("ELSE", "else", t.lineno(4), find_column(input, t.slice[4]), contador))
+    nodoElse = NodoSintactico("ELSE", "ELSE", -1, -1, contador)
     contador += 1
-    t[0].addHijo(t[5])
+    nodoElse.addHijo(NodoSintactico("else", "else", t.lineno(4), find_column(input, t.slice[4]), contador))
+    contador += 1
+    nodoElse.addHijo(t[5])
+    t[0].addHijo(nodoElse)
     t[0].addHijo(NodoSintactico("END", "end", t.lineno(6), find_column(input, t.slice[6]), contador))
     contador += 1
     t[0].addHijo(NodoSintactico("PUNTOCOMA", ";", t.lineno(7), find_column(input, t.slice[7]), contador))
@@ -544,29 +547,51 @@ def p_instruccionIf_3(t):
     contador += 1
     t[0].addHijo(t[2])
     t[0].addHijo(t[3])
-    t[4].addHijo(NodoSintactico("ELSE", "else", t.lineno(5), find_column(input, t.slice[5]), contador))
+    nodoElse = NodoSintactico("ELSE", "ELSE", -1, -1, contador)
     contador += 1
-    t[4].addHijo(t[6])
-    t[4].addHijo(NodoSintactico("END", "end", t.lineno(7), find_column(input, t.slice[7]), contador))
+    nodoElse.addHijo(NodoSintactico("else", "else", t.lineno(5), find_column(input, t.slice[5]), contador))
     contador += 1
-    t[4].addHijo(NodoSintactico("PUNTOCOMA", ";", t.lineno(8), find_column(input, t.slice[8]), contador))
-    contador += 1
+    nodoElse.addHijo(t[6])
+    t[4].addHijo(nodoElse)
     t[0].addHijo(t[4])
+    t[0].addHijo(NodoSintactico("END", "end", t.lineno(7), find_column(input, t.slice[7]), contador))
+    contador += 1
+    t[0].addHijo(NodoSintactico("PUNTOCOMA", ";", t.lineno(8), find_column(input, t.slice[8]), contador))
+    contador += 1
+
+def p_instruccionIf_4(t):
+    'instruccionIf  : resIf expresion listaInstrucciones instruccionElseif resEnd PUNTOCOMA'
+    global contador
+    t[0] = NodoSintactico("BLOQUEIF", "BLOQUEIF", -1, -1, contador)
+    contador += 1
+    t[0].addHijo(NodoSintactico("IF", "if", t.lineno(1), find_column(input, t.slice[1]), contador))
+    contador += 1
+    t[0].addHijo(t[2])
+    t[0].addHijo(t[3])
+    t[0].addHijo(t[4])
+    t[0].addHijo(NodoSintactico("END", "end", t.lineno(5), find_column(input, t.slice[5]), contador))
+    contador += 1
+    t[0].addHijo(NodoSintactico("PUNTOCOMA", ";", t.lineno(6), find_column(input, t.slice[6]), contador))
+    contador += 1
 
 def p_instruccionElseif_1(t):
     'instruccionElseif  : instruccionElseif resElseif expresion listaInstrucciones'
     global contador
-    nuevo = NodoSintactico("ELSEIF", "elseif", t.lineno(2), find_column(input, t.slice[2]), contador)
+    nodoElseif = NodoSintactico("ELSEIF", "ELSEIF", -1, -1, contador)
     contador += 1
-    nuevo.addHijo(t[3])
-    nuevo.addHijo(t[4])
-    t[0].addHijo(nuevo)
-    t[0] = t[0]
+    nodoElseif.addHijo(NodoSintactico("ELSEIF", "elseif", t.lineno(2), find_column(input, t.slice[2]), contador))
+    contador += 1
+    nodoElseif.addHijo(t[3])
+    nodoElseif.addHijo(t[4])
+    t[1].addHijo(nodoElseif)
+    t[0] = t[1]
 
 def p_instruccionElseif_2(t):
     'instruccionElseif  : resElseif expresion listaInstrucciones'
     global contador
-    t[0] = NodoSintactico("ELSEIF", "elseif", t.lineno(1), find_column(input, t.slice[1]), contador)
+    t[0] = NodoSintactico("ELSEIF", "ELSEIF", -1, -1, contador)
+    contador += 1
+    t[0].addHijo(NodoSintactico("ELSEIF", "elseif", t.lineno(1), find_column(input, t.slice[1]), contador))
     contador += 1
     t[0].addHijo(t[2])
     t[0].addHijo(t[3])
