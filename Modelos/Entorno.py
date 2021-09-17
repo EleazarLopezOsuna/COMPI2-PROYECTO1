@@ -46,3 +46,5 @@ class Entorno():
             else:
                 actual = actual.anterior
         
+    def getNombre(self):
+        return str(self.nombre)

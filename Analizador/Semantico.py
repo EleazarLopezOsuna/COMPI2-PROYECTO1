@@ -43,6 +43,10 @@ class Semantico():
                 self.ejecutarBloqueIf(root, entorno)
             if(root.getNombre() == "ASIGNACION"):
                 self.ejecutarAsignacion(root, entorno)
+            if(root.getNombre() == "STRUCT"):
+                self.ejecutarStruct(root, entorno, 0)
+            if(root.getNombre() == "MUTABLE"):
+                self.ejecutarStruct(root.getHijo(1), entorno, 1)
     
     def ejecutarBloqueIf(self, root, entorno):
         condicion = self.resolverExpresion(root.getHijo(1), entorno)
@@ -120,6 +124,23 @@ class Semantico():
                 print("Asignacion de atributos de un struct")
             elif(root.getHijo(1).getNombre() == "DIMENSION"):
                 print("Asignacion hacia un espacio de un arreglo")
+        elif(len(root.hijos) == 2):
+            nombreVariableNueva = str(root.getHijo(0).getValor())
+            entorno.insertar(nombreVariableNueva, Simbolo(EnumTipo.nulo, "",  root.getHijo(0).getLinea(), root.getHijo(0).getColumna()))
+
+    def ejecutarStruct(self, root, entorno, tipo):
+        # La expresion es un arreglo
+        nuevoEntorno = Entorno(entorno, "")
+        nombreStruct = str(root.getHijo(1).getValor())
+        for hijo in root.getHijo(2).hijos:
+            # Obtengo todos los hijos
+            if(hijo.getNombre() == "ATRIBUTO"):
+                nombreAtributo = hijo.getHijo(0).getValor()
+                nuevoEntorno.insertar(nombreAtributo, Simbolo(EnumTipo.nulo, "", hijo.getHijo(0).getLinea(), hijo.getHijo(0).getColumna()))
+        if(tipo == 0):
+            entorno.insertar(nombreStruct, Simbolo(EnumTipo.nomutable, nuevoEntorno, root.getHijo(1).getLinea(), root.getHijo(1).getColumna()))
+        else:
+            entorno.insertar(nombreStruct, Simbolo(EnumTipo.nomutable, nuevoEntorno, root.getHijo(1).getLinea(), root.getHijo(1).getColumna()))
 
     def ejecutarLlamadaFuncion(self, root, entorno):
         nombreFuncion = root.getHijo(0)

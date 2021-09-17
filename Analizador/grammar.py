@@ -392,6 +392,14 @@ def p_asignacion_5(t):
     contador += 1
     t[0].addHijo(t[3])
 
+def p_asignacion_6(t):
+    'asignacion : IDENTIFICADOR'
+    global contador
+    t[0] = NodoSintactico("ASIGNACION", "ASIGNACION", -1, -1, contador)
+    contador += 1
+    t[0].addHijo(NodoSintactico("IDENTIFICADOR", t[1], t.lineno(1), find_column(input, t.slice[1]), contador))
+    contador += 1
+
 def p_llamadaFuncion_1(t):
     'llamadaFuncion : IDENTIFICADOR PARENTESISA listaExpresiones PARENTESISC'
     global contador
@@ -1416,11 +1424,14 @@ def parse(inp):
     for entorno in analisisSemantico.entornos:
         for key in entorno.tabla:
             simbolo = entorno.tabla[key]
-            if simbolo.getTipo() == EnumTipo.arreglo:
+            if simbolo.getTipo() == EnumTipo.mutable or simbolo.getTipo() == EnumTipo.nomutable:
+                cadena = "{" + concatAtributos(simbolo) + "}"
+                print('Entorno: ' + entorno.getNombre() +' Nombre: ' + key + ' Tipo: ' + str(simbolo.getTipo()) + ' Valor: ' + cadena + ' Fila: ' + simbolo.getFila() + ' Columna: ' + simbolo.getColumna())
+            elif simbolo.getTipo() == EnumTipo.arreglo:
                 cadena = "[" + concatItems(simbolo) + "]"
-                print('Nombre: ' + key + ' Tipo: ' + str(simbolo.getTipo()) + ' Valor: ' + cadena + ' Fila: ' + simbolo.getFila() + ' Columna: ' + simbolo.getColumna())
+                print('Entorno: ' + entorno.getNombre() +' Nombre: ' + key + ' Tipo: ' + str(simbolo.getTipo()) + ' Valor: ' + cadena + ' Fila: ' + simbolo.getFila() + ' Columna: ' + simbolo.getColumna())
             else:
-                print('Nombre: ' + key + ' Tipo: ' + str(simbolo.getTipo()) + ' Valor: ' + str(simbolo.getValor()) + ' Fila: ' + simbolo.getFila() + ' Columna: ' + simbolo.getColumna())
+                print('Entorno: ' + entorno.getNombre() +' Nombre: ' + key + ' Tipo: ' + str(simbolo.getTipo()) + ' Valor: ' + str(simbolo.getValor()) + ' Fila: ' + simbolo.getFila() + ' Columna: ' + simbolo.getColumna())
     return resultado
 
 def concatItems(simbolo):
@@ -1437,4 +1448,14 @@ def concatItems(simbolo):
                 retorno = str(sim.getValor())
             else:
                 retorno = retorno + ", " + str(sim.getValor())
+    return retorno
+
+def concatAtributos(simbolo):
+    retorno = ""
+    ent = simbolo.getValor()
+    for item in ent.tabla:
+        if len(retorno) == 0:
+                retorno = str(item)
+        else:
+            retorno = retorno + ", " + str(item)
     return retorno
