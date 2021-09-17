@@ -41,6 +41,8 @@ class Semantico():
                 self.ejecutarLlamadaFuncion(root, entorno)
             if(root.getNombre() == "BLOQUEIF"):
                 self.ejecutarBloqueIf(root, entorno)
+            if(root.getNombre() == "ASIGNACION"):
+                self.ejecutarAsignacion(root, entorno)
     
     def ejecutarBloqueIf(self, root, entorno):
         condicion = self.resolverExpresion(root.getHijo(1), entorno)
@@ -81,6 +83,43 @@ class Semantico():
                     self.recorrer(root.getHijo(2), entorno)
                     return True
         return False
+
+    def ejecutarAsignacion(self, root, entorno):
+        if(len(root.hijos) == 6):
+            nombreVariableNueva = str(root.getHijo(0).getValor())
+            valorVariableNueva = self.resolverExpresion(root.getHijo(2), entorno)
+            tipoVariableNueva = str(root.getHijo(4).getHijo(0).getNombre())
+            if tipoVariableNueva == "INT64":
+                tipoVariableNueva = EnumTipo.entero
+            elif tipoVariableNueva == "FLOAT64":
+                tipoVariableNueva = EnumTipo.flotante
+            elif tipoVariableNueva == "BOLEANO":
+                tipoVariableNueva = EnumTipo.boleano
+            elif tipoVariableNueva == "CHAR":
+                tipoVariableNueva = EnumTipo.caracter
+            elif tipoVariableNueva == "STRING":
+                tipoVariableNueva = EnumTipo.cadena
+            if tipoVariableNueva != "IDENTIFICADOR":
+                if valorVariableNueva.getTipo() == tipoVariableNueva:
+                    entorno.insertar(nombreVariableNueva, Simbolo(valorVariableNueva.getTipo(), valorVariableNueva.getValor(), root.getHijo(0).getLinea(), root.getHijo(0).getColumna()))
+                else:
+                    # Reportar Error
+                    print('Los tipos ' + str(tipoVariableNueva) + ' y ' + str(valorVariableNueva.getTipo()) + ' no coinciden')
+            else:
+                # Reportar Error
+                print('Se esperaba un tipo primitivo y se encontro ' + str(root.getHijo(4).getHijo(0).getValor()))
+        elif(len(root.hijos) == 4):
+            if(root.getHijo(2).getNombre() == "EXPRESION"):
+                nombreVariableNueva = str(root.getHijo(0).getValor())
+                valorVariableNueva = self.resolverExpresion(root.getHijo(2), entorno)
+                entorno.insertar(nombreVariableNueva, Simbolo(valorVariableNueva.getTipo(), valorVariableNueva.getValor(), root.getHijo(0).getLinea(), root.getHijo(0).getColumna()))
+            else:
+                print("Asignacion sin valor pero con tipo")
+        elif(len(root.hijos) == 5):
+            if(root.getHijo(1).getNombre() == "ACCESOFS"):
+                print("Asignacion de atributos de un struct")
+            elif(root.getHijo(1).getNombre() == "DIMENSION"):
+                print("Asignacion hacia un espacio de un arreglo")
 
     def ejecutarLlamadaFuncion(self, root, entorno):
         nombreFuncion = root.getHijo(0)

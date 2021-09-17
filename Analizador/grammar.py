@@ -381,6 +381,17 @@ def p_asignacion_4(t):
     contador += 1
     t[0].addHijo(t[4])
 
+def p_asignacion_5(t):
+    'asignacion : IDENTIFICADOR DOBLEPUNTOS tipo'
+    global contador
+    t[0] = NodoSintactico("ASIGNACION", "ASIGNACION", -1, -1, contador)
+    contador += 1
+    t[0].addHijo(NodoSintactico("IDENTIFICADOR", t[1], t.lineno(1), find_column(input, t.slice[1]), contador))
+    contador += 1
+    t[0].addHijo(NodoSintactico("DOBLEPUNTOS", "::", t.lineno(2), find_column(input, t.slice[2]), contador))
+    contador += 1
+    t[0].addHijo(t[3])
+
 def p_llamadaFuncion_1(t):
     'llamadaFuncion : IDENTIFICADOR PARENTESISA listaExpresiones PARENTESISC'
     global contador
@@ -808,7 +819,7 @@ def p_tipo_3(t):
     global contador
     t[0] = NodoSintactico("TIPO", "TIPO", -1, -1, contador)
     contador += 1
-    t[0].addHijo(NodoSintactico("NOTHING", "nothing", t.lineno(1), find_column(input, t.slice[1]), contador))
+    t[0].addHijo(NodoSintactico("BOLEANO", "bool", t.lineno(1), find_column(input, t.slice[1]), contador))
     contador += 1
 
 def p_tipo_4(t):
@@ -847,7 +858,7 @@ def p_accesoFS_1(t):
 def p_accesoFS_2(t):
     'accesoFS   : PUNTO IDENTIFICADOR'
     global contador
-    t[0] = NodoSintactico("ACCESOFS", "accesofs", -1, -1, contador)
+    t[0] = NodoSintactico("ACCESOFS", "ACCESOFS", -1, -1, contador)
     contador += 1
     t[0].addHijo(NodoSintactico("PUNTO", ".", t.lineno(1), find_column(input, t.slice[1]), contador))
     contador += 1
@@ -1375,6 +1386,7 @@ def p_listaExpresiones_2(t):
 import ply.yacc as yacc
 from Graficador.Arbol import Arbol
 from Analizador.Semantico import Semantico
+from Modelos.Simbolo import Simbolo
 parser = yacc.yacc()
 
 def getErrores():
@@ -1395,6 +1407,12 @@ def parse(inp):
     resultado = arbol.getDot(root)
     analisisSemantico = Semantico(root)
     analisisSemantico.iniciarAnalisisSemantico()
+    print("-------Consola-------")
     for consola in analisisSemantico.consola:
         print(str(consola))
+    print("-------Variables-------")
+    for entorno in analisisSemantico.entornos:
+        for key in entorno.tabla:
+            simbolo = entorno.tabla[key]
+            print('Nombre: ' + key + ' Tipo: ' + str(simbolo.getTipo()) + ' Valor: ' + str(simbolo.getValor()) + ' Fila: ' + simbolo.getFila() + ' Columna: ' + simbolo.getColumna())
     return resultado
