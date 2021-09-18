@@ -51,6 +51,10 @@ class Semantico():
                 self.ejecutarWhile(root, entorno)
                 self.parar = False
                 self.continuar = False
+            if(root.getNombre() == "INSTRUCCIONBREAK"):
+                self.parar = True
+            if(root.getNombre() == "INSTRUCCIONCONTINUE"):
+                self.continuar = True
     
     def ejecutarWhile(self, root, entorno):
         condicion = self.resolverExpresion(root.getHijo(1), entorno)
@@ -58,13 +62,14 @@ class Semantico():
         if condicion.getTipo() != EnumTipo.error:
             if condicion.getTipo() == EnumTipo.boleano:
                 continuar = bool(condicion.getValor())
-                print(continuar == True)
                 while(continuar):
-                    self.parar = False
                     self.continuar = False
                     self.recorrer(root.getHijo(2), entorno)
                     condicion = self.resolverExpresion(root.getHijo(1), entorno)
                     continuar = bool(condicion.getValor())
+                    if self.parar == True:
+                        self.parar = False
+                        break
 
     def ejecutarBloqueIf(self, root, entorno):
         condicion = self.resolverExpresion(root.getHijo(1), entorno)

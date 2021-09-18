@@ -11,6 +11,8 @@ def analyze():
         global tmp_val
         tmp_val=inpt
         tmp_val = str(tmp_val).replace('||', '!!!')
+        tmp_val = str(tmp_val).replace('global ', '')
+        tmp_val = str(tmp_val).replace('local ', '')
         return redirect(url_for("output"))
     else:
         f = open("./entrada.txt", "r")
