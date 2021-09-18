@@ -31,9 +31,22 @@ class Entorno():
         actual = self
         while actual != None:
             if nombre in actual.tabla:
-                simbolo = Simbolo(actual.tabla[nombre])
-                if((simbolo.tipo == EnumTipo.mutable) or (simbolo.tipo == EnumTipo.nomutable)):
+                simbolo = actual.tabla[nombre]
+                if((simbolo.getTipo() == EnumTipo.mutable) or (simbolo.getTipo() == EnumTipo.nomutable)):
                     return simbolo
+            actual = actual.anterior
+        return None
+
+    # Funcion que permite saber si una identificador hace referencia a un arreglo
+    # {Objeto: Si es arreglo y lo devuelve, None: no se encontro o no es arreglo}
+    def isArreglo(self, nombre):
+        actual = self
+        while actual != None:
+            if nombre in actual.tabla:
+                simbolo = actual.tabla[nombre]
+                if(simbolo.getTipo() == EnumTipo.arreglo):
+                    return simbolo
+            actual = actual.anterior
         return None
 
     # Funcion que busca una variable dentro del entorno y sus padres y modifica su valor

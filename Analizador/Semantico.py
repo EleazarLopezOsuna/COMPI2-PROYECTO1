@@ -120,13 +120,69 @@ class Semantico():
             else:
                 print("Asignacion sin valor pero con tipo")
         elif(len(root.hijos) == 5):
+            nombreVariableNueva = str(root.getHijo(0).getValor())
             if(root.getHijo(1).getNombre() == "ACCESOFS"):
                 print("Asignacion de atributos de un struct")
             elif(root.getHijo(1).getNombre() == "DIMENSION"):
-                print("Asignacion hacia un espacio de un arreglo")
+                simbolo = entorno.isArreglo(nombreVariableNueva)
+                dimension = root.getHijo(1)
+                resultadoExpresion = self.resolverExpresion(root.getHijo(3), entorno)
+                if simbolo != None:
+                    posiciones = self.ejecutarObtenerDimension(dimension, simbolo, entorno)
+                    if posiciones != None:
+                        self.asignarPosicionArreglo(posiciones, simbolo, nombreVariableNueva, resultadoExpresion)
+                else:
+                    # Reportar Error
+                    print('Se esperaba un arreglo')
         elif(len(root.hijos) == 2):
             nombreVariableNueva = str(root.getHijo(0).getValor())
             entorno.insertar(nombreVariableNueva, Simbolo(EnumTipo.nulo, "",  root.getHijo(0).getLinea(), root.getHijo(0).getColumna()))
+
+    def asignarPosicionArreglo(self, posiciones, simbolo, nombreVariableNueva, expresion):
+        if len(posiciones) == 1:
+            if simbolo.getTipo() == EnumTipo.arreglo:
+                if int(posiciones[0]) < len(simbolo.getValor()):
+                    simbolo.getValor()[posiciones[0]] = Simbolo(expresion.getTipo(), expresion.getValor(), simbolo.getFila(), simbolo.getColumna())
+                    return simbolo
+                else:
+                    # Reportar Error
+                    print('Index fuera de rango')
+            else:
+                # Reportar Error
+                print('Se esperaba arreglo')
+        else:
+            if simbolo.getTipo() == EnumTipo.arreglo:
+                if  int(posiciones[0]) < len(simbolo.getValor()):
+                    nuevoPosiciones = posiciones
+                    posicionAnterior = posiciones[0]
+                    del nuevoPosiciones[0]
+                    simbolo.getValor()[posicionAnterior] = self.asignarPosicionArreglo(nuevoPosiciones, simbolo.getValor()[posicionAnterior], nombreVariableNueva, expresion)
+                    return simbolo
+                else:
+                    # Reportar Error
+                    print('Index fuera de rango')
+            else:
+                # Reportar Error
+                print('Se esperaba arreglo')
+        return None
+
+    def ejecutarObtenerDimension(self, root, simbolo, entorno):
+        posiciones = []
+        for hijo in root.hijos:
+            if hijo.getNombre() == "EXPRESION":
+                expresion = self.resolverExpresion(hijo, entorno)
+                if expresion.getTipo() != EnumTipo.error:
+                    if expresion.getTipo() == EnumTipo.entero:
+                        posiciones.append(int(expresion.getValor()))
+                    else:
+                        # Reportar Error
+                        print('Se esperaba tipo entero')
+                        return None
+                else:
+                    # Reportar Error
+                    print('Se encontro un error')
+                    return None
+        return posiciones
 
     def ejecutarStruct(self, root, entorno, tipo):
         # La expresion es un arreglo

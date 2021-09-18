@@ -393,6 +393,20 @@ def p_asignacion_5(t):
     t[0].addHijo(t[3])
 
 def p_asignacion_6(t):
+    'asignacion : IDENTIFICADOR DOBLEPUNTOS tipo IGUAL expresion'
+    global contador
+    t[0] = NodoSintactico("ASIGNACION", "ASIGNACION", -1, -1, contador)
+    contador += 1
+    t[0].addHijo(NodoSintactico("IDENTIFICADOR", t[1], t.lineno(1), find_column(input, t.slice[1]), contador))
+    contador += 1
+    t[0].addHijo(NodoSintactico("DOBLEPUNTOS", "::", t.lineno(2), find_column(input, t.slice[2]), contador))
+    contador += 1
+    t[0].addHijo(t[3])
+    t[0].addHijo(NodoSintactico("IGUAL", "=", t.lineno(4), find_column(input, t.slice[4]), contador))
+    contador += 1
+    t[0].addHijo(t[5])
+
+def p_asignacion_7(t):
     'asignacion : IDENTIFICADOR'
     global contador
     t[0] = NodoSintactico("ASIGNACION", "ASIGNACION", -1, -1, contador)
