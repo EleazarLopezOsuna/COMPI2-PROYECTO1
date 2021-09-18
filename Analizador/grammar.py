@@ -106,7 +106,7 @@ t_MAYORIGUAL        = r'\>\='
 t_MENORIGUAL        = r'\<\='
 t_IGUALIGUAL        = r'\=\='
 t_DIFERENTE         = r'\!\='
-t_OR                = r'\|\|'
+t_OR                = r'\!\!\!'
 t_AND               = r'\&\&'
 t_NOT               = r'\!'
 t_PUNTO             = r'\.'
@@ -152,10 +152,9 @@ def t_CARACTER(t):
     t.value = t.value[1:-1]
     return t
 
-def t_COMENTARIO_LINEA(t):
-    r'\#.*\n'
-    global contador
-    t.lexer.lineno += 1
+t_ignore_LINEA = r'\#.*\n'
+
+t_ignore_MULTI = r'\#=(.|\n)+?=\#'
 
 t_ignore = "\t| |\n|\r"
 
@@ -178,8 +177,8 @@ lexer = lex.lex()
 precedence = (
     ('left', 'OR'),
     ('left', 'AND'),
-    ('nonassoc', 'IGUALIGUAL', 'DIFERENTE'),
-    ('nonassoc', 'MENOR', 'MAYOR', 'MENORIGUAL', 'MAYORIGUAL'),
+    ('left', 'IGUALIGUAL', 'DIFERENTE'),
+    ('left', 'MAYOR', 'MENOR', 'MAYORIGUAL', 'MENORIGUAL'),
     ('left', 'SUMA', 'RESTA'),
     ('left', 'DIVISION', 'MULTIPLICACION', 'MODULO'),
     ('left', 'POTENCIA'),
@@ -632,7 +631,9 @@ def p_instruccionElseif_2(t):
 def p_instruccionWhile(t):
     'instruccionWhile   : resWhile expresion listaInstrucciones resEnd PUNTOCOMA'
     global contador
-    t[0] = NodoSintactico("WHILE", "while", t.lineno(1), find_column(input, t.slice[1]), contador)
+    t[0] = NodoSintactico("SWHILE", "SWHILE", -1, -1, contador)
+    contador += 1
+    t[0].addHijo(NodoSintactico("WHILE", "while", t.lineno(1), find_column(input, t.slice[1]), contador))
     contador += 1
     t[0].addHijo(t[2])
     t[0].addHijo(t[3])
@@ -1249,17 +1250,19 @@ def p_nativa_12(t):
     contador += 1
 
 def p_nativa_13(t):
-    'nativa : resPop PARENTESISA IDENTIFICADOR PARENTESISC'
+    'nativa : resPop NOT PARENTESISA IDENTIFICADOR PARENTESISC'
     global contador
     t[0] = NodoSintactico("HACERPOP", "HACERPOP", -1, -1, contador)
     contador += 1
     t[0].addHijo(NodoSintactico("POP", "pop", t.lineno(1), find_column(input, t.slice[1]), contador))
     contador += 1
-    t[0].addHijo(NodoSintactico("PARENTESISA", "(", t.lineno(2), find_column(input, t.slice[2]), contador))
+    t[0].addHijo(NodoSintactico("DIFERENTE", "!", t.lineno(2), find_column(input, t.slice[2]), contador))
     contador += 1
-    t[0].addHijo(NodoSintactico("IDENTIFICADOR", t[3], t.lineno(3), find_column(input, t.slice[3]), contador))
+    t[0].addHijo(NodoSintactico("PARENTESISA", "(", t.lineno(3), find_column(input, t.slice[3]), contador))
     contador += 1
-    t[0].addHijo(NodoSintactico("PARENTESISC", ")", t.lineno(4), find_column(input, t.slice[4]), contador))
+    t[0].addHijo(NodoSintactico("IDENTIFICADOR", t[4], t.lineno(4), find_column(input, t.slice[4]), contador))
+    contador += 1
+    t[0].addHijo(NodoSintactico("PARENTESISC", ")", t.lineno(5), find_column(input, t.slice[5]), contador))
     contador += 1
 
 def p_nativa_14(t):
@@ -1301,6 +1304,26 @@ def p_nativa_16(t):
     t[0].addHijo(NodoSintactico("PARENTESISC", ")", t.lineno(4), find_column(input, t.slice[4]), contador))
     contador += 1
 
+def p_relacionales_5(t):
+    'relacionales   : expresion IGUALIGUAL expresion'
+    global contador
+    t[0] = NodoSintactico("IGUALDAD", "IGUALDAD", -1, -1, contador)
+    contador += 1
+    t[0].addHijo(t[1])
+    t[0].addHijo(NodoSintactico("IGUALQUE", "==", t.lineno(2), find_column(input, t.slice[2]), contador))
+    contador += 1
+    t[0].addHijo(t[3])
+
+def p_relacionales_6(t):
+    'relacionales   : expresion DIFERENTE expresion'
+    global contador
+    t[0] = NodoSintactico("DIFERENCIA", "DIFERENCIA", -1, -1, contador)
+    contador += 1
+    t[0].addHijo(t[1])
+    t[0].addHijo(NodoSintactico("DIFERENTEA", "!=", t.lineno(2), find_column(input, t.slice[2]), contador))
+    contador += 1
+    t[0].addHijo(t[3])
+
 def p_relacionales_1(t):
     'relacionales   : expresion MAYOR expresion'
     global contador
@@ -1338,26 +1361,6 @@ def p_relacionales_4(t):
     contador += 1
     t[0].addHijo(t[1])
     t[0].addHijo(NodoSintactico("MENORIGUALQUE", "<=", t.lineno(2), find_column(input, t.slice[2]), contador))
-    contador += 1
-    t[0].addHijo(t[3])
-
-def p_relacionales_5(t):
-    'relacionales   : expresion IGUALIGUAL expresion'
-    global contador
-    t[0] = NodoSintactico("IGUALDAD", "IGUALDAD", -1, -1, contador)
-    contador += 1
-    t[0].addHijo(t[1])
-    t[0].addHijo(NodoSintactico("IGUALQUE", "==", t.lineno(2), find_column(input, t.slice[2]), contador))
-    contador += 1
-    t[0].addHijo(t[3])
-
-def p_relacionales_6(t):
-    'relacionales   : expresion DIFERENTE expresion'
-    global contador
-    t[0] = NodoSintactico("DIFERENCIA", "DIFERENCIA", -1, -1, contador)
-    contador += 1
-    t[0].addHijo(t[1])
-    t[0].addHijo(NodoSintactico("DIFERENTEA", "!=", t.lineno(2), find_column(input, t.slice[2]), contador))
     contador += 1
     t[0].addHijo(t[3])
 
@@ -1438,7 +1441,9 @@ def parse(inp):
     for entorno in analisisSemantico.entornos:
         for key in entorno.tabla:
             simbolo = entorno.tabla[key]
-            if simbolo.getTipo() == EnumTipo.mutable or simbolo.getTipo() == EnumTipo.nomutable:
+            if simbolo.getTipo() == EnumTipo.error:
+                print('Entorno: ' + entorno.getNombre() +' Nombre: ' + key + ' Tipo: ' + str(simbolo.getTipo()) + ' Valor: ' + str(simbolo.getValor().getError()) + ' Fila: ' + simbolo.getFila() + ' Columna: ' + simbolo.getColumna())
+            elif simbolo.getTipo() == EnumTipo.mutable or simbolo.getTipo() == EnumTipo.nomutable:
                 cadena = "{" + concatAtributos(simbolo) + "}"
                 print('Entorno: ' + entorno.getNombre() +' Nombre: ' + key + ' Tipo: ' + str(simbolo.getTipo()) + ' Valor: ' + cadena + ' Fila: ' + simbolo.getFila() + ' Columna: ' + simbolo.getColumna())
             elif simbolo.getTipo() == EnumTipo.arreglo:

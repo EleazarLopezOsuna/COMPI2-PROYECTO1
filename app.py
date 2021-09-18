@@ -10,6 +10,7 @@ def analyze():
         inpt = request.form["inpt"]
         global tmp_val
         tmp_val=inpt
+        tmp_val = str(tmp_val).replace('||', '!!!')
         return redirect(url_for("output"))
     else:
         f = open("./entrada.txt", "r")
