@@ -150,7 +150,7 @@ class Semantico():
                         print('Se esperaba rango(a:b), arreglo([a,b,c,..] o cadena')
                 else:
                     # Reportar Error
-                    print('Se encontro un error')
+                    print('Se encontro un error ccc')
                 
     def ejecutarWhile(self, root, entorno):
         condicion = self.resolverExpresion(root.getHijo(1), entorno)
@@ -287,6 +287,34 @@ class Semantico():
                 print('Se esperaba arreglo')
         return None
     
+    def hacerPushPosicionArreglo(self, posiciones, simbolo, expresion):
+        if len(posiciones) == 1:
+            if simbolo.getTipo() == EnumTipo.arreglo:
+                if int(posiciones[0]) < len(simbolo.getValor()):
+                    simbolo.getValor()[posiciones[0]].getValor().append(Simbolo(expresion.getTipo(), expresion.getValor(), simbolo.getFila(), simbolo.getColumna()))
+                    return simbolo
+                else:
+                    # Reportar Error
+                    print('Index fuera de rango')
+            else:
+                # Reportar Error
+                print('Se esperaba arreglo')
+        else:
+            if simbolo.getTipo() == EnumTipo.arreglo:
+                if  int(posiciones[0]) < len(simbolo.getValor()):
+                    nuevoPosiciones = posiciones
+                    posicionAnterior = posiciones[0]
+                    del nuevoPosiciones[0]
+                    simbolo.getValor()[posicionAnterior] = self.hacerPushPosicionArreglo(nuevoPosiciones, simbolo.getValor()[posicionAnterior], expresion)
+                    return simbolo
+                else:
+                    # Reportar Error
+                    print('Index fuera de rango')
+            else:
+                # Reportar Error
+                print('Se esperaba arreglo')
+        return None
+
     def obtenerPosicionArreglo(self, posiciones, simbolo):
         if len(posiciones) == 1:
             if simbolo.getTipo() == EnumTipo.arreglo:
@@ -307,7 +335,6 @@ class Semantico():
                     return Expresion(EnumTipo.error, Error(simbolo.fila, simbolo.columna, "Semantico", "Index fuera de rango"))
             else:
                 return Expresion(EnumTipo.error, Error(simbolo.fila, simbolo.columna, "Semantico", "Se esperaba arreglo"))
-        return None
 
     def ejecutarObtenerDimension(self, root, entorno):
         posiciones = []
@@ -323,7 +350,7 @@ class Semantico():
                         return None
                 else:
                     # Reportar Error
-                    print('Se encontro un error')
+                    print('Se encontro un error ddd')
                     return None
         return posiciones
 
@@ -363,6 +390,34 @@ class Semantico():
             self.ejecutarPrintln(root.getHijo(2), entorno)
         elif(nombreFuncion.getNombre() == "PRINT"):
             self.ejecutarPrint(root.getHijo(2), entorno)
+        elif(nombreFuncion.getNombre() == "PUSH"):
+            nombreArreglo = root.getHijo(3).getHijo(0).getValor()
+            if len(root.getHijo(3).hijos) == 2:
+                posiciones = self.ejecutarObtenerDimension(root.getHijo(3).getHijo(1), entorno)
+                if posiciones != None:
+                    simbolo = entorno.buscar(nombreArreglo)
+                    if simbolo != None:
+                        if simbolo.getTipo() == EnumTipo.arreglo:
+                            expresion = self.resolverExpresion(root.getHijo(5), entorno)
+                            self.hacerPushPosicionArreglo(posiciones, simbolo, expresion)
+                        else:
+                            # Reportar error
+                            print('Se esperaba tipo arreglo')
+                    else:
+                        # Reportar error
+                        print('Hubo un error')
+            else:
+                simbolo = entorno.buscar(nombreArreglo)
+                if simbolo != None:
+                    if simbolo.getTipo() == EnumTipo.arreglo:
+                        expresion = self.resolverExpresion(root.getHijo(5), entorno)
+                        simbolo.getValor().append(Simbolo(expresion.getTipo(), expresion.getValor(), simbolo.getFila(), simbolo.getColumna()))
+                    else:
+                        # Reportar error
+                        print('Se esperaba tipo arreglo')
+                else:
+                    # Reportar error
+                    print('Hubo un error')
         else:
             nombreFuncion = root.getHijo(0).getValor()
             simbolo = entorno.buscar(nombreFuncion)
@@ -395,12 +450,13 @@ class Semantico():
                         subPrograma = copy.deepcopy(simbolo)
                         subPrograma.getValor().recibirParametros(parametros)
                         self.recorrer(subPrograma.getValor().getRoot(), subPrograma.getValor().getEntorno())
+                        subPrograma.getValor().regresarReferencias(entorno, parametros)
                     else:
                         # Reportar error
                         print('No se encontro la funcion')
                 else:
                     # Reportar error
-                    print('Se encontro un error')
+                    print('Se encontro un error aaa')
             else:
                 # funcion(p1, p2, p3, ...)
                 parametros = self.obtenerParametros(root.getHijo(2), entorno)
@@ -409,12 +465,13 @@ class Semantico():
                         subPrograma = copy.deepcopy(simbolo)
                         subPrograma.getValor().recibirParametros(parametros)
                         self.recorrer(subPrograma.getValor().getRoot(), subPrograma.getValor().getEntorno())
+                        subPrograma.getValor().regresarReferencias(entorno, parametros)
                     else:
                         # Reportar error
                         print('No se encontro la funcion')
                 else:
                     # Reportar error
-                    print('Se encontro un error')
+                    print('Se encontro un error bbb')
 
     def ejecutarFuncion(self, root, entorno):
         nombreFuncion = root.getHijo(0).getValor()
@@ -439,8 +496,28 @@ class Semantico():
             if(hijo.getNombre() == "EXPRESION"):
                 resultadoExpresion = self.resolverExpresion(hijo, entorno)
                 if(resultadoExpresion.getTipo() != EnumTipo.error):
-                    cadena += str(resultadoExpresion.getValor())
+                    if resultadoExpresion.getTipo() == EnumTipo.arreglo:
+                        cadena = self.concatItems(resultadoExpresion)
+                        print('Cadena: ', cadena)
+                    else:
+                        cadena = str(resultadoExpresion.getValor())
         self.consola.append(cadena)
+
+    def concatItems(self, simbolo):
+        retorno = ""
+        for sim in simbolo.getValor():
+            if sim.getTipo() == EnumTipo.arreglo:
+                cadena = "[" + self.concatItems(sim) + "]"
+                if len(retorno) == 0:
+                    retorno = cadena
+                else:
+                    retorno = retorno + ", " + cadena
+            else:
+                if len(retorno) == 0:
+                    retorno = str(sim.getValor())
+                else:
+                    retorno = retorno + ", " + str(sim.getValor())
+        return retorno
 
     def ejecutarPrint(self, root, entorno):
         for hijo in root.hijos:
@@ -451,9 +528,15 @@ class Semantico():
                     if size != 0:
                         size -= 1
                         texto = self.consola[size]
-                        self.consola[size] = texto + str(resultadoExpresion.getValor())
+                        if resultadoExpresion.getTipo() == EnumTipo.arreglo:
+                            self.consola[size] = texto + self.concatItems(resultadoExpresion)
+                        else:
+                            self.consola[size] = texto + str(resultadoExpresion.getValor())
                     else:
-                        self.consola.append(str(resultadoExpresion.getValor()))
+                        if resultadoExpresion.getTipo() == EnumTipo.arreglo:
+                            self.consola.append(self.concatItems(resultadoExpresion))
+                        else:
+                            self.consola.append(str(resultadoExpresion.getValor()))
 
     def resolverExpresion(self, root, entorno):
         if(root.getNombre() == "EXPRESION"):

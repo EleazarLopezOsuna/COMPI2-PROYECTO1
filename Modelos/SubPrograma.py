@@ -4,7 +4,6 @@ from Modelos.Simbolo import EnumTipo
 class SubPrograma():
 
     def __init__(self, root, entorno, linea, columna, indexParametros):
-        self.nombreParametros = {}
         self.root = root
         self.entorno = entorno
         self.retorno = Simbolo(EnumTipo.nulo, "", linea, columna)
@@ -24,7 +23,17 @@ class SubPrograma():
             nombreParametro = self.indexParametros[contador]
             self.entorno.modificar(nombreParametro, Simbolo(expresion.getTipo(), expresion.getValor(), -1, -1))
             contador += 1
-        #self.imprimirEntorno(self.entorno)
+
+    def regresarReferencias(self, entornoGlobal, parametros):
+        contador = 0
+        for parametro in parametros:
+            expresion = parametros[parametro]
+            if 'expresion2997_' not in parametro:
+                if ((expresion.getTipo() == EnumTipo.arreglo) or (expresion.getTipo() == EnumTipo.mutable) or (expresion.getTipo() == EnumTipo.nomutable)):
+                    nombreParametro = self.indexParametros[contador]
+                    simbolo = self.entorno.buscar(nombreParametro)
+                    entornoGlobal.modificar(parametro, simbolo)
+            contador += 1
     
     def concatItems(self, simbolo):
         retorno = ""
