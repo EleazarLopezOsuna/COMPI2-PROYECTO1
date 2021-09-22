@@ -1247,7 +1247,7 @@ def p_nativa_12(t):
     contador += 1
 
 def p_nativa_13(t):
-    'nativa : resPop NOT PARENTESISA IDENTIFICADOR PARENTESISC'
+    'nativa : resPop NOT PARENTESISA expresion PARENTESISC'
     global contador
     t[0] = NodoSintactico("HACERPOP", "HACERPOP", -1, -1, contador)
     contador += 1
@@ -1257,8 +1257,7 @@ def p_nativa_13(t):
     contador += 1
     t[0].addHijo(NodoSintactico("PARENTESISA", "(", t.lineno(3), find_column(input, t.slice[3]), contador))
     contador += 1
-    t[0].addHijo(NodoSintactico("IDENTIFICADOR", t[4], t.lineno(4), find_column(input, t.slice[4]), contador))
-    contador += 1
+    t[0].addHijo(t[4])
     t[0].addHijo(NodoSintactico("PARENTESISC", ")", t.lineno(5), find_column(input, t.slice[5]), contador))
     contador += 1
 

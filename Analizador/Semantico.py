@@ -29,9 +29,6 @@ class Semantico():
 
     def recorrer(self, root, entorno):
         if((not self.parar) and (not self.continuar)):
-            nuevoEntorno = Entorno
-            simbolo = Simbolo
-            expresion = Expresion
             llamarHijos = [
                 "INICIO",
                 "INSTRUCCION"
@@ -315,6 +312,35 @@ class Semantico():
                 print('Se esperaba arreglo')
         return None
 
+    def hacerPopPosicionArreglo(self, posiciones, simbolo):
+        if len(posiciones) == 1:
+            if simbolo.getTipo() == EnumTipo.arreglo:
+                if int(posiciones[0]) < len(simbolo.getValor()):
+                    resultado = simbolo.getValor()[posiciones[0]].getValor().pop()
+                    return simbolo, Expresion(resultado.getTipo(), resultado.getValor())
+                else:
+                    # Reportar Error
+                    print('Index fuera de rango')
+            else:
+                # Reportar Error
+                print('Se esperaba arreglo')
+        else:
+            if simbolo.getTipo() == EnumTipo.arreglo:
+                if  int(posiciones[0]) < len(simbolo.getValor()):
+                    nuevoPosiciones = posiciones
+                    posicionAnterior = posiciones[0]
+                    del nuevoPosiciones[0]
+                    resultado = self.hacerPopPosicionArreglo(nuevoPosiciones, simbolo.getValor()[posicionAnterior])
+                    simbolo.getValor()[posicionAnterior] = resultado[0]
+                    return simbolo, resultado[1]
+                else:
+                    # Reportar Error
+                    print('Index fuera de rango')
+            else:
+                # Reportar Error
+                print('Se esperaba arreglo')
+        return None
+
     def obtenerPosicionArreglo(self, posiciones, simbolo):
         if len(posiciones) == 1:
             if simbolo.getTipo() == EnumTipo.arreglo:
@@ -498,7 +524,6 @@ class Semantico():
                 if(resultadoExpresion.getTipo() != EnumTipo.error):
                     if resultadoExpresion.getTipo() == EnumTipo.arreglo:
                         cadena = self.concatItems(resultadoExpresion)
-                        print('Cadena: ', cadena)
                     else:
                         cadena = str(resultadoExpresion.getValor())
         self.consola.append(cadena)
@@ -565,8 +590,6 @@ class Semantico():
                     posiciones = self.ejecutarObtenerDimension(root.getHijo(1), entorno)
                     if posiciones != None:
                         return self.obtenerPosicionArreglo(posiciones, simbolo)
-
-
         if(root.getNombre() == "RESTA"):
             resultadoPrimero = self.resolverExpresion(root.getHijo(0), entorno)
             resultadoSegundo = self.resolverExpresion(root.getHijo(2), entorno)
@@ -713,7 +736,32 @@ class Semantico():
             else:
                 return expresion
         if(root.getNombre() == "HACERPOP"):
-            print("pop")
+            nombreArreglo = root.getHijo(3).getHijo(0).getValor()
+            if len(root.getHijo(3).hijos) == 2:
+                posiciones = self.ejecutarObtenerDimension(root.getHijo(3).getHijo(1), entorno)
+                if posiciones != None:
+                    simbolo = entorno.buscar(nombreArreglo)
+                    if simbolo != None:
+                        if simbolo.getTipo() == EnumTipo.arreglo:
+                            return self.hacerPopPosicionArreglo(posiciones, simbolo)[1]
+                        else:
+                            # Reportar error
+                            print('Se esperaba tipo arreglo')
+                    else:
+                        # Reportar error
+                        print('Hubo un error')
+            else:
+                simbolo = entorno.buscar(nombreArreglo)
+                if simbolo != None:
+                    if simbolo.getTipo() == EnumTipo.arreglo:
+                        retornar = simbolo.getValor().pop()
+                        return Expresion(retornar.getTipo(), retornar.getValor())
+                    else:
+                        # Reportar error
+                        print('Se esperaba tipo arreglo')
+                else:
+                    # Reportar error
+                    print('Hubo un error')
         if(root.getNombre() == "IDENTIFICADOR"):
             return self.obtenerValorIdentificador(root, entorno, root.getLinea(), root.getColumna())
         if(root.getNombre() == "LLAMADAFUNCION"):
