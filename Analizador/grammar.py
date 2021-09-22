@@ -645,13 +645,16 @@ def p_instruccionWhile(t):
 def p_instruccionFor(t):
     'instruccionFor : resFor IDENTIFICADOR resIn expresion listaInstrucciones resEnd PUNTOCOMA'
     global contador
-    t[0] = NodoSintactico("FOR", "for", t.lineno(1), find_column(input, t.slice[1]), contador)
+    t[0] = NodoSintactico("FOR", "FOR", t.lineno(1), find_column(input, t.slice[1]), contador)
+    contador += 1
+    t[0].addHijo(NodoSintactico("for", "for", t.lineno(1), find_column(input, t.slice[1]), contador))
     contador += 1
     t[0].addHijo(NodoSintactico("IDENTIFICADOR", t[2], t.lineno(2), find_column(input, t.slice[2]), contador))
     contador += 1
     t[0].addHijo(NodoSintactico("IN", "in", t.lineno(3), find_column(input, t.slice[3]), contador))
     contador += 1
     t[0].addHijo(t[4])
+    t[0].addHijo(t[5])
     t[0].addHijo(NodoSintactico("END", "end", t.lineno(6), find_column(input, t.slice[6]), contador))
     contador += 1
     t[0].addHijo(NodoSintactico("PUNTOCOMA", ";", t.lineno(7), find_column(input, t.slice[7]), contador))

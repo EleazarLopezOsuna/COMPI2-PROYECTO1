@@ -55,7 +55,64 @@ class Semantico():
                 self.parar = True
             if(root.getNombre() == "INSTRUCCIONCONTINUE"):
                 self.continuar = True
+            if(root.getNombre() == "FOR"):
+                self.ejecutarFor(root, entorno)
     
+    def ejecutarFor(self, root, entorno):
+        if(len(root.hijos) == 7):
+            nombreVariable = root.getHijo(1).getValor()
+            if(len(root.getHijo(3).hijos) == 3):
+                if(root.getHijo(3).getHijo(1).getValor() == ":"):
+                    # for i in a:b instrucciones end;
+                    valorInicial = self.resolverExpresion(root.getHijo(3).getHijo(0), entorno)
+                    valorFinal = self.resolverExpresion(root.getHijo(3).getHijo(2), entorno)
+                    if(valorInicial.getTipo() != EnumTipo.error and valorFinal.getTipo() != EnumTipo.error):
+                        if(valorInicial.getTipo() == EnumTipo.entero and valorFinal.getTipo()):
+                            indexInicial = int(valorInicial.getValor())
+                            indexFinal = int(valorFinal.getValor())
+                            for i in range(indexInicial, (indexFinal + 1)):
+                                entorno.insertar(nombreVariable, Simbolo(EnumTipo.entero, i, root.getHijo(1).getLinea(), root.getHijo(1).getColumna()))
+                                self.recorrer(root.getHijo(4), entorno)
+                elif(root.getHijo(3).getHijo(1).getValor() == "LISTAEXPRESIONES"):
+                    # for i in [items] instrucciones end ;
+                    encontroError = False
+                    listaExpresiones = []
+                    for hijo in root.getHijo(3).getHijo(1).hijos:
+                        if hijo.getNombre() == "EXPRESION":
+                            expresion = self.resolverExpresion(hijo, entorno)
+                            if(expresion.getTipo() == EnumTipo.error):
+                                encontroError = True
+                                listaExpresiones = expresion
+                                break
+                            listaExpresiones.append(expresion)
+                    if encontroError == False:
+                        for expresion in listaExpresiones:
+                            entorno.insertar(nombreVariable, Simbolo(expresion.getTipo(), expresion.getValor(), root.getHijo(1).getLinea(), root.getHijo(1).getColumna()))
+                            self.recorrer(root.getHijo(4), entorno)
+                    else:
+                        # Reportar error
+                        print("Se encontro un error en listaExpresiones")
+            elif(len(root.getHijo(3).hijos) == 1):
+                expresion = self.resolverExpresion(root.getHijo(3), entorno)
+                if expresion.getTipo() != EnumTipo.error:
+                    if expresion.getTipo() == EnumTipo.cadena or expresion.getTipo() == EnumTipo.arreglo:
+                        if expresion.getTipo() == EnumTipo.cadena:
+                            cadena = str(expresion.getValor())
+                            for i in cadena:
+                                entorno.insertar(nombreVariable, Simbolo(EnumTipo.cadena, i, root.getHijo(1).getLinea(), root.getHijo(1).getColumna()))
+                                self.recorrer(root.getHijo(4), entorno)
+                        if expresion.getTipo() == EnumTipo.arreglo:
+                            for i in expresion.getValor():
+                                entorno.insertar(nombreVariable, Simbolo(i.getTipo(), i.getValor(), root.getHijo(1).getLinea(), root.getHijo(1).getColumna()))
+                                self.recorrer(root.getHijo(4), entorno)
+                    else:
+                        # Reportar Error
+                        print('Se esperaba rango(a:b), arreglo([a,b,c,..] o cadena')
+                else:
+                    # Reportar Error
+                    print('Se encontro un error')
+                
+
     def ejecutarWhile(self, root, entorno):
         condicion = self.resolverExpresion(root.getHijo(1), entorno)
         continuar = True
@@ -220,7 +277,7 @@ class Semantico():
                 expresion = self.resolverExpresion(hijo, entorno)
                 if expresion.getTipo() != EnumTipo.error:
                     if expresion.getTipo() == EnumTipo.entero:
-                        posiciones.append(int(expresion.getValor()))
+                        posiciones.append(int(expresion.getValor()) - 1)
                     else:
                         # Reportar Error
                         print('Se esperaba tipo entero')
@@ -441,7 +498,15 @@ class Semantico():
             resultadoPrimero = self.resolverExpresion(root.getHijo(0), entorno)
             return self.operarNot(resultadoPrimero, entorno, root.getHijo(0).getLinea, root.getHijo(0).getColumna)
         if(root.getNombre() == "OBTENERSIZE"):
-            print("size")
+            expresion = self.resolverExpresion(root.getHijo(2), entorno)
+            if(expresion.getTipo() != EnumTipo.error):
+                if(expresion.getTipo() == EnumTipo.arreglo):
+                    return Expresion(EnumTipo.entero, len(expresion.getValor()))
+                else:
+                    # Reportar Error
+                    return Expresion(EnumTipo.error, "Se esperaba un arreglo, se obtuvo " + str(expresion.getTipo()))
+            else:
+                return expresion
         if(root.getNombre() == "HACERPOP"):
             print("pop")
         if(root.getNombre() == "IDENTIFICADOR"):
