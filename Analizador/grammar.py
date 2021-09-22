@@ -896,8 +896,11 @@ def p_listaParametros_1(t):
     global contador
     t[1].addHijo(NodoSintactico("COMA", ",", t.lineno(2), find_column(input, t.slice[2]), contador))
     contador += 1
-    t[1].addHijo(NodoSintactico("IDENTIFICADOR", t[3], t.lineno(3), find_column(input, t.slice[3]), contador))
+    nodoParametro = NodoSintactico("PARAMETRO", "PARAMETRO", -1, -1, contador)
     contador += 1
+    nodoParametro.addHijo(NodoSintactico("IDENTIFICADOR", t[3], t.lineno(3), find_column(input, t.slice[3]), contador))
+    contador += 1
+    t[1].addHijo(nodoParametro)
     t[0] = t[1]
 
 def p_listaParametros_2(t):
@@ -905,11 +908,16 @@ def p_listaParametros_2(t):
     global contador
     t[1].addHijo(NodoSintactico("COMA", ",", t.lineno(2), find_column(input, t.slice[2]), contador))
     contador += 1
-    t[1].addHijo(NodoSintactico("IDENTIFICADOR", t[3], t.lineno(3), find_column(input, t.slice[3]), contador))
+    nodoParametro = NodoSintactico("PARAMETRO", "PARAMETRO", -1, -1, contador)
     contador += 1
-    t[1].addHijo(NodoSintactico("DOBLEPUNTOS", "::", t.lineno(4), find_column(input, t.slice[4]), contador))
+    nodoParametro.addHijo(NodoSintactico("IDENTIFICADOR", t[3], t.lineno(3), find_column(input, t.slice[3]), contador))
     contador += 1
-    t[1].addHijo(t[5])
+    nodoParametro.addHijo(NodoSintactico("IDENTIFICADOR", t[3], t.lineno(3), find_column(input, t.slice[3]), contador))
+    contador += 1
+    nodoParametro.addHijo(NodoSintactico("DOBLEPUNTOS", "::", t.lineno(4), find_column(input, t.slice[4]), contador))
+    contador += 1
+    nodoParametro.addHijo(t[5])
+    t[1].addHijo(nodoParametro)
     t[0] = t[1]
 
 def p_listaParametros_3(t):
@@ -917,19 +925,25 @@ def p_listaParametros_3(t):
     global contador
     t[0] = NodoSintactico("LISTAPARAMETROS", "LISTAPARAMETROS", -1, -1, contador)
     contador += 1
-    t[0].addHijo(NodoSintactico("IDENTIFICADOR", t[1], t.lineno(1), find_column(input, t.slice[1]), contador))
+    nodoParametro = NodoSintactico("PARAMETRO", "PARAMETRO", -1, -1, contador)
     contador += 1
-    t[0].addHijo(NodoSintactico("DOBLEPUNTOS", "::", t.lineno(2), find_column(input, t.slice[2]), contador))
+    nodoParametro.addHijo(NodoSintactico("IDENTIFICADOR", t[1], t.lineno(1), find_column(input, t.slice[1]), contador))
     contador += 1
-    t[0].addHijo(t[3])
+    nodoParametro.addHijo(NodoSintactico("DOBLEPUNTOS", "::", t.lineno(2), find_column(input, t.slice[2]), contador))
+    contador += 1
+    nodoParametro.addHijo(t[3])
+    t[0].addHijo(nodoParametro)
 
 def p_listaParametros_4(t):
     'listaParametros    : IDENTIFICADOR'
     global contador
     t[0] = NodoSintactico("LISTAPARAMETROS", "LISTAPARAMETROS", -1, -1, contador)
     contador += 1
-    t[0].addHijo(NodoSintactico("IDENTIFICADOR", t[1], t.lineno(1), find_column(input, t.slice[1]), contador))
+    nodoParametro = NodoSintactico("PARAMETRO", "PARAMETRO", -1, -1, contador)
     contador += 1
+    nodoParametro.addHijo(NodoSintactico("IDENTIFICADOR", t[1], t.lineno(1), find_column(input, t.slice[1]), contador))
+    contador += 1
+    t[0].addHijo(nodoParametro)
 
 def p_bloqueStruct(t):
     'bloqueStruct   : bloqueStruct declaracionAtributo PUNTOCOMA'
@@ -1442,19 +1456,25 @@ def parse(inp):
         print(str(consola))
     print("-------Variables-------")
     for entorno in analisisSemantico.entornos:
-        for key in entorno.tabla:
-            simbolo = entorno.tabla[key]
-            if simbolo.getTipo() == EnumTipo.error:
-                print('Entorno: ' + entorno.getNombre() +' Nombre: ' + key + ' Tipo: ' + str(simbolo.getTipo()) + ' Valor: ' + str(simbolo.getValor().getError()) + ' Fila: ' + simbolo.getFila() + ' Columna: ' + simbolo.getColumna())
-            elif simbolo.getTipo() == EnumTipo.mutable or simbolo.getTipo() == EnumTipo.nomutable:
-                cadena = "{" + concatAtributos(simbolo) + "}"
-                print('Entorno: ' + entorno.getNombre() +' Nombre: ' + key + ' Tipo: ' + str(simbolo.getTipo()) + ' Valor: ' + cadena + ' Fila: ' + simbolo.getFila() + ' Columna: ' + simbolo.getColumna())
-            elif simbolo.getTipo() == EnumTipo.arreglo:
-                cadena = "[" + concatItems(simbolo) + "]"
-                print('Entorno: ' + entorno.getNombre() +' Nombre: ' + key + ' Tipo: ' + str(simbolo.getTipo()) + ' Valor: ' + cadena + ' Fila: ' + simbolo.getFila() + ' Columna: ' + simbolo.getColumna())
-            else:
-                print('Entorno: ' + entorno.getNombre() +' Nombre: ' + key + ' Tipo: ' + str(simbolo.getTipo()) + ' Valor: ' + str(simbolo.getValor()) + ' Fila: ' + simbolo.getFila() + ' Columna: ' + simbolo.getColumna())
+        imprimirEntorno(entorno)
     return resultado
+
+def imprimirEntorno(entorno):
+    for key in entorno.tabla:
+        simbolo = entorno.tabla[key]
+        if simbolo.getTipo() == EnumTipo.error:
+            print('Entorno: ' + entorno.getNombre() +' Nombre: ' + key + ' Tipo: ' + str(simbolo.getTipo()) + ' Valor: ' + str(simbolo.getValor().getError()) + ' Fila: ' + simbolo.getFila() + ' Columna: ' + simbolo.getColumna())
+        elif simbolo.getTipo() == EnumTipo.mutable or simbolo.getTipo() == EnumTipo.nomutable:
+            cadena = "{" + concatAtributos(simbolo) + "}"
+            print('Entorno: ' + entorno.getNombre() +' Nombre: ' + key + ' Tipo: ' + str(simbolo.getTipo()) + ' Valor: ' + cadena + ' Fila: ' + simbolo.getFila() + ' Columna: ' + simbolo.getColumna())
+        elif simbolo.getTipo() == EnumTipo.arreglo:
+            cadena = "[" + concatItems(simbolo) + "]"
+            print('Entorno: ' + entorno.getNombre() +' Nombre: ' + key + ' Tipo: ' + str(simbolo.getTipo()) + ' Valor: ' + cadena + ' Fila: ' + simbolo.getFila() + ' Columna: ' + simbolo.getColumna())
+        elif simbolo.getTipo() == EnumTipo.funcion:
+            print('Entorno: ' + entorno.getNombre() +' Nombre: ' + key + ' Tipo: ' + str(simbolo.getTipo()) + ' Valor: ' + ' Fila: ' + simbolo.getFila() + ' Columna: ' + simbolo.getColumna())
+            imprimirEntorno(simbolo.getValor().getEntorno())
+        else:
+            print('Entorno: ' + entorno.getNombre() +' Nombre: ' + key + ' Tipo: ' + str(simbolo.getTipo()) + ' Valor: ' + str(simbolo.getValor()) + ' Fila: ' + simbolo.getFila() + ' Columna: ' + simbolo.getColumna())
 
 def concatItems(simbolo):
     retorno = ""

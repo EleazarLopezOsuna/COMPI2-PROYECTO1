@@ -6,6 +6,7 @@ from Modelos.Expresion import Expresion
 from Modelos.Objeto import Objeto
 from Modelos.NodoSintactico import NodoSintactico
 from Modelos.Error import Error
+from Modelos.SubPrograma import SubPrograma
 import math
 
 class Semantico():
@@ -57,6 +58,39 @@ class Semantico():
                 self.continuar = True
             if(root.getNombre() == "FOR"):
                 self.ejecutarFor(root, entorno)
+            if(root.getNombre() == "DECLARARFUNCION"):
+                self.ejecutarDeclararFuncion(root, entorno)
+
+    def ejecutarDeclararFuncion(self, root, entorno):
+        nombreFuncion = root.getHijo(1).getValor()
+        entornoFuncion = self.definirParametrosFuncion(root.getHijo(3), entorno, nombreFuncion)
+        if entornoFuncion != None:
+            instruccionesFuncion = root.getHijo(5)
+            if entorno.buscar(nombreFuncion) == None:
+                # El nombre de la funcion no existe, si se puede generar
+                subPrograma = SubPrograma(instruccionesFuncion, entornoFuncion[0], root.getHijo(1).getLinea(), root.getHijo(1).getColumna(), entornoFuncion[1])
+                entorno.insertar(nombreFuncion, Simbolo(EnumTipo.funcion, subPrograma, root.getHijo(1).getLinea(), root.getHijo(1).getColumna()))
+            else:
+                # Reportar error
+                print('El identificador ' + str(nombreFuncion) + ' ya esta definido')
+        else:
+            # Reportar error
+            print('Se encontro un parametro repetido')
+
+    def definirParametrosFuncion(self, root, entorno, nombreFuncion):
+        retorno = Entorno(entorno, nombreFuncion)
+        retorno2 = {}
+        indexParametro = 0
+        for parametro in root.hijos:
+            if parametro.getNombre() == "PARAMETRO":
+                print(parametro.getNombre())
+                nombreParametro = str(parametro.getHijo(0).getValor())
+                if (nombreParametro in retorno.tabla) == True:
+                    return None
+                retorno.insertar(nombreParametro, Simbolo(EnumTipo.entero, 0, parametro.getHijo(0).getLinea(), parametro.getHijo(0).getColumna()))
+                retorno2[indexParametro] = nombreParametro
+                indexParametro += 1
+        return retorno, retorno2
     
     def ejecutarFor(self, root, entorno):
         if(len(root.hijos) == 7):
@@ -112,7 +146,6 @@ class Semantico():
                     # Reportar Error
                     print('Se encontro un error')
                 
-
     def ejecutarWhile(self, root, entorno):
         condicion = self.resolverExpresion(root.getHijo(1), entorno)
         continuar = True
