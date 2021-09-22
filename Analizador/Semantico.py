@@ -7,7 +7,9 @@ from Modelos.Objeto import Objeto
 from Modelos.NodoSintactico import NodoSintactico
 from Modelos.Error import Error
 from Modelos.SubPrograma import SubPrograma
+
 import math
+import copy
 
 class Semantico():
     def __init__(self, root):
@@ -60,12 +62,17 @@ class Semantico():
                 self.ejecutarFor(root, entorno)
             if(root.getNombre() == "DECLARARFUNCION"):
                 self.ejecutarDeclararFuncion(root, entorno)
+            if(root.getNombre() == "RETORNO"):
+                self.retorno = self.resolverExpresion(root.getHijo(1), entorno)
 
     def ejecutarDeclararFuncion(self, root, entorno):
         nombreFuncion = root.getHijo(1).getValor()
         entornoFuncion = self.definirParametrosFuncion(root.getHijo(3), entorno, nombreFuncion)
         if entornoFuncion != None:
-            instruccionesFuncion = root.getHijo(5)
+            if len(root.hijos) == 8:
+                instruccionesFuncion = root.getHijo(5)
+            else:
+                instruccionesFuncion = root.getHijo(4)
             if entorno.buscar(nombreFuncion) == None:
                 # El nombre de la funcion no existe, si se puede generar
                 subPrograma = SubPrograma(instruccionesFuncion, entornoFuncion[0], root.getHijo(1).getLinea(), root.getHijo(1).getColumna(), entornoFuncion[1])
@@ -83,7 +90,6 @@ class Semantico():
         indexParametro = 0
         for parametro in root.hijos:
             if parametro.getNombre() == "PARAMETRO":
-                print(parametro.getNombre())
                 nombreParametro = str(parametro.getHijo(0).getValor())
                 if (nombreParametro in retorno.tabla) == True:
                     return None
@@ -335,6 +341,22 @@ class Semantico():
         else:
             entorno.insertar(nombreStruct, Simbolo(EnumTipo.nomutable, nuevoEntorno, root.getHijo(1).getLinea(), root.getHijo(1).getColumna()))
 
+    def obtenerParametros(self, root, entorno):
+        retorno = {}
+        for hijo in root.hijos:
+            if hijo.getNombre() == "EXPRESION":
+                if hijo.getHijo(0).getNombre() == "IDENTIFICADOR":
+                    expresion = self.resolverExpresion(hijo, entorno)
+                    if expresion.getTipo() == EnumTipo.error:
+                        return None
+                    retorno[str(hijo.getHijo(0).getValor())] = expresion
+                else:
+                    expresion = self.resolverExpresion(hijo, entorno)
+                    if expresion.getTipo() == EnumTipo.error:
+                        return None
+                    retorno['expresion2997_' +str(len(retorno))] = expresion
+        return retorno
+
     def ejecutarLlamadaFuncion(self, root, entorno):
         nombreFuncion = root.getHijo(0)
         if(nombreFuncion.getNombre() == "PRINTLN"):
@@ -342,7 +364,74 @@ class Semantico():
         elif(nombreFuncion.getNombre() == "PRINT"):
             self.ejecutarPrint(root.getHijo(2), entorno)
         else:
-            print("OTRA FUNCION")
+            nombreFuncion = root.getHijo(0).getValor()
+            simbolo = entorno.buscar(nombreFuncion)
+            if ((len(root.hijos) == 4) and (root.getHijo(2).getNombre() != "LISTAEXPRESIONES")):
+                # funcion();
+                if simbolo != None:
+                    if simbolo.getTipo() == EnumTipo.funcion:
+                        # Es una funcion
+                        funcion = simbolo.getValor()
+                        self.recorrer(funcion.getRoot(), funcion.getEntorno())
+                else:
+                    # Reportar error
+                    print('No se encontro la funcion')
+            if (len(root.hijos) == 3):
+                # No tiene parametros
+                simbolo = entorno.buscar(nombreFuncion)
+                if simbolo != None:
+                    if simbolo.getTipo() == EnumTipo.funcion:
+                        # Es una funcion
+                        funcion = simbolo.getValor()
+                        self.recorrer(funcion.getRoot(), funcion.getEntorno())
+                else:
+                    # Reportar error
+                    print('No se encontro la funcion')
+            elif(len(root.hijos) == 5):
+                # Tiene parametros
+                parametros = self.obtenerParametros(root.getHijo(2), entorno)
+                if simbolo != None:
+                    if simbolo.getTipo() == EnumTipo.funcion:
+                        subPrograma = copy.deepcopy(simbolo)
+                        subPrograma.getValor().recibirParametros(parametros)
+                        self.recorrer(subPrograma.getValor().getRoot(), subPrograma.getValor().getEntorno())
+                    else:
+                        # Reportar error
+                        print('No se encontro la funcion')
+                else:
+                    # Reportar error
+                    print('Se encontro un error')
+            else:
+                # funcion(p1, p2, p3, ...)
+                parametros = self.obtenerParametros(root.getHijo(2), entorno)
+                if simbolo != None:
+                    if simbolo.getTipo() == EnumTipo.funcion:
+                        subPrograma = copy.deepcopy(simbolo)
+                        subPrograma.getValor().recibirParametros(parametros)
+                        self.recorrer(subPrograma.getValor().getRoot(), subPrograma.getValor().getEntorno())
+                    else:
+                        # Reportar error
+                        print('No se encontro la funcion')
+                else:
+                    # Reportar error
+                    print('Se encontro un error')
+
+    def ejecutarFuncion(self, root, entorno):
+        nombreFuncion = root.getHijo(0).getValor()
+        if len(root.hijos) == 4:
+            # No tiene parametros
+            simbolo = entorno.buscar(nombreFuncion)
+            if simbolo != None:
+                if simbolo.getTipo() == EnumTipo.funcion:
+                    # Es una funcion
+                    funcion = simbolo.getValor()
+                    self.recorrer(funcion.getRoot(), funcion.getEntorno())
+            else:
+                # Reportar error
+                print('No se encontro la funcion')
+        else:
+            # Tiene parametros
+            print('Tiene parametros')
 
     def ejecutarPrintln(self, root, entorno):
         cadena = ""
@@ -544,6 +633,9 @@ class Semantico():
             print("pop")
         if(root.getNombre() == "IDENTIFICADOR"):
             return self.obtenerValorIdentificador(root, entorno, root.getLinea(), root.getColumna())
+        if(root.getNombre() == "LLAMADAFUNCION"):
+            self.ejecutarLlamadaFuncion(root, entorno)
+            return self.retorno
 
     def obtenerValorIdentificador(self, root, entorno, linea, columna):
         simbolo = entorno.buscar(str(root.getValor()))

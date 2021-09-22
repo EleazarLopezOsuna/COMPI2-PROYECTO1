@@ -6,7 +6,7 @@ from Modelos.NodoSintactico import NodoSintactico
 import sys
 import os
 import re
-sys.setrecursionlimit(3000)
+sys.setrecursionlimit(10000)
 
 errores = []
 global contador
@@ -779,13 +779,6 @@ def p_expresion_17(t):
     t[0].addHijo(t[1])
     t[0].addHijo(t[2])
 
-def p_expresion_18(t):
-    'expresion  : construccionStruct'
-    global contador
-    t[0] = NodoSintactico("EXPRESION", "EXPRESION", -1, -1, contador)
-    contador += 1
-    t[0].addHijo(t[1])
-
 def p_expresion_19(t):
     'expresion  : PARENTESISA expresion PARENTESISC'
     global contador
@@ -1000,19 +993,6 @@ def p_dimension_2(t):
     contador += 1
     t[0].addHijo(t[2])
     t[0].addHijo(NodoSintactico("CORCHETEC", "]", t.lineno(3), find_column(input, t.slice[3]), contador))
-    contador += 1
-
-def p_construccionStruct(t):
-    'construccionStruct : IDENTIFICADOR PARENTESISA listaAsignaciones PARENTESISC'
-    global contador
-    t[0] = NodoSintactico("CONSTRUCCIONSTRUCT", "CONSTRUCCIONSTRUCT", -1, -1, contador)
-    contador += 1
-    t[0].addHijo(NodoSintactico("IDENTIFICADOR", t[1], t.lineno(1), find_column(input, t.slice[1]), contador))
-    contador += 1
-    t[0].addHijo(NodoSintactico("PARENTESISA", "(", t.lineno(2), find_column(input, t.slice[2]), contador))
-    contador += 1
-    t[0].addHijo(t[3])
-    t[0].addHijo(NodoSintactico("PARENTESISC", ")", t.lineno(4), find_column(input, t.slice[4]), contador))
     contador += 1
 
 def p_listaAsignaciones(t):

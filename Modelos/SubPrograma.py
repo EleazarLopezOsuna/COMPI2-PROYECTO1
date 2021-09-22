@@ -10,7 +10,6 @@ class SubPrograma():
         self.retorno = Simbolo(EnumTipo.nulo, "", linea, columna)
         self.entorno.insertar("retorno", self.retorno)
         self.indexParametros = indexParametros
-        self.insertarValorParametro()
 
     def getEntorno(self):
         return self.entorno
@@ -18,5 +17,54 @@ class SubPrograma():
     def getRoot(self):
         return self.root
 
-    def insertarValorParametro(self):
-        print(self.indexParametros)
+    def recibirParametros(self, parametros):
+        contador = 0
+        for parametro in parametros:
+            expresion = parametros[parametro]
+            nombreParametro = self.indexParametros[contador]
+            self.entorno.modificar(nombreParametro, Simbolo(expresion.getTipo(), expresion.getValor(), -1, -1))
+            contador += 1
+        #self.imprimirEntorno(self.entorno)
+    
+    def concatItems(self, simbolo):
+        retorno = ""
+        for sim in simbolo.getValor():
+            if sim.getTipo() == EnumTipo.arreglo:
+                cadena = "[" + self.concatItems(sim) + "]"
+                if len(retorno) == 0:
+                    retorno = cadena
+                else:
+                    retorno = retorno + ", " + cadena
+            else:
+                if len(retorno) == 0:
+                    retorno = str(sim.getValor())
+                else:
+                    retorno = retorno + ", " + str(sim.getValor())
+        return retorno
+
+    def concatAtributos(self, simbolo):
+        retorno = ""
+        ent = simbolo.getValor()
+        for item in ent.tabla:
+            if len(retorno) == 0:
+                retorno = str(item)
+            else:
+                retorno = retorno + ", " + str(item)
+        return retorno
+
+    def imprimirEntorno(self, entorno):
+        for key in entorno.tabla:
+            simbolo = entorno.tabla[key]
+            if simbolo.getTipo() == EnumTipo.error:
+                print('Entorno: ' + entorno.getNombre() +' Nombre: ' + key + ' Tipo: ' + str(simbolo.getTipo()) + ' Valor: ' + str(simbolo.getValor().getError()) + ' Fila: ' + simbolo.getFila() + ' Columna: ' + simbolo.getColumna())
+            elif simbolo.getTipo() == EnumTipo.mutable or simbolo.getTipo() == EnumTipo.nomutable:
+                cadena = "{" + self.concatAtributos(simbolo) + "}"
+                print('Entorno: ' + entorno.getNombre() +' Nombre: ' + key + ' Tipo: ' + str(simbolo.getTipo()) + ' Valor: ' + cadena + ' Fila: ' + simbolo.getFila() + ' Columna: ' + simbolo.getColumna())
+            elif simbolo.getTipo() == EnumTipo.arreglo:
+                cadena = "[" + self.concatItems(simbolo) + "]"
+                print('Entorno: ' + entorno.getNombre() +' Nombre: ' + key + ' Tipo: ' + str(simbolo.getTipo()) + ' Valor: ' + cadena + ' Fila: ' + simbolo.getFila() + ' Columna: ' + simbolo.getColumna())
+            elif simbolo.getTipo() == EnumTipo.funcion:
+                print('Entorno: ' + entorno.getNombre() +' Nombre: ' + key + ' Tipo: ' + str(simbolo.getTipo()) + ' Valor: ' + ' Fila: ' + simbolo.getFila() + ' Columna: ' + simbolo.getColumna())
+                self.imprimirEntorno(simbolo.getValor().getEntorno())
+            else:
+                print('Entorno: ' + entorno.getNombre() +' Nombre: ' + key + ' Tipo: ' + str(simbolo.getTipo()) + ' Valor: ' + str(simbolo.getValor()) + ' Fila: ' + simbolo.getFila() + ' Columna: ' + simbolo.getColumna())
