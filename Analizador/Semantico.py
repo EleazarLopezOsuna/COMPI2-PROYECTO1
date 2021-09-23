@@ -240,7 +240,30 @@ class Semantico():
         elif(len(root.hijos) == 5):
             nombreVariableNueva = str(root.getHijo(0).getValor())
             if(root.getHijo(1).getNombre() == "ACCESOFS"):
-                print("Asignacion de atributos de un struct")
+                nombreVariable = root.getHijo(0).getValor()
+                valorVariable = self.resolverExpresion(root.getHijo(3), entorno)
+                simbolo = entorno.buscar(nombreVariable)
+                if simbolo != None:
+                    if ((simbolo.getTipo() == EnumTipo.mutable) or (simbolo.getTipo() == EnumTipo.nomutable)):
+                        temporal = simbolo
+                        for hijo in root.getHijo(1).hijos:
+                            if hijo.getValor() != ".":
+                                if ((simbolo.getTipo() == EnumTipo.mutable) or (simbolo.getTipo() == EnumTipo.nomutable)):
+                                    entornoModificar = temporal.getValor()
+                                    nombreModificar = hijo.getValor()
+                                    temporal = temporal.getValor().buscar(hijo.getValor())
+                                else:
+                                    temporal = None
+                                    break
+                        if temporal != None:
+                            simboloModificar = Simbolo(valorVariable.getTipo(), valorVariable.getValor(), root.getHijo(0).getLinea(), root.getHijo(0).getColumna)
+                            entornoModificar.modificar(nombreModificar, simboloModificar)
+                        else:
+                            # Reportar error
+                            print('Se esperaba un struct')
+                    else:
+                        # Reportar error
+                        print('Se esperaba un struct')
             elif(root.getHijo(1).getNombre() == "DIMENSION"):
                 simbolo = entorno.isArreglo(nombreVariableNueva)
                 dimension = root.getHijo(1)
@@ -392,7 +415,7 @@ class Semantico():
         if(tipo == 0):
             entorno.insertar(nombreStruct, Simbolo(EnumTipo.nomutable, nuevoEntorno, root.getHijo(1).getLinea(), root.getHijo(1).getColumna()))
         else:
-            entorno.insertar(nombreStruct, Simbolo(EnumTipo.nomutable, nuevoEntorno, root.getHijo(1).getLinea(), root.getHijo(1).getColumna()))
+            entorno.insertar(nombreStruct, Simbolo(EnumTipo.mutable, nuevoEntorno, root.getHijo(1).getLinea(), root.getHijo(1).getColumna()))
 
     def obtenerParametros(self, root, entorno):
         retorno = {}
@@ -485,6 +508,8 @@ class Semantico():
                     print('Se encontro un error aaa')
             else:
                 # funcion(p1, p2, p3, ...)
+                nombreFuncion = root.getHijo(0).getValor()
+                simbolo = entorno.buscar(nombreFuncion)
                 parametros = self.obtenerParametros(root.getHijo(2), entorno)
                 if simbolo != None:
                     if simbolo.getTipo() == EnumTipo.funcion:
@@ -492,6 +517,29 @@ class Semantico():
                         subPrograma.getValor().recibirParametros(parametros)
                         self.recorrer(subPrograma.getValor().getRoot(), subPrograma.getValor().getEntorno())
                         subPrograma.getValor().regresarReferencias(entorno, parametros)
+                        return 1
+                    elif ((simbolo.getTipo() == EnumTipo.mutable) or (simbolo.getTipo() == EnumTipo.nomutable)):
+                        # Vamos a declarar un objeto
+                        atributos = []
+                        for hijo in root.getHijo(2).hijos:
+                            if hijo.getNombre() == "EXPRESION":
+                                expresion = self.resolverExpresion(hijo, entorno)
+                                if expresion.getTipo() != EnumTipo.error:
+                                    atributos.append(expresion)
+                                else:
+                                    # Reportar Error
+                                    print('Se encontro un error')
+                        nuevoObjeto = copy.deepcopy(simbolo)
+                        iterador = 0
+                        correlacion = {}
+                        for elemento in nuevoObjeto.getValor().tabla:
+                            correlacion[iterador] = elemento
+                            iterador += 1
+                        iterador = 0
+                        for elemento in atributos:
+                            nuevoObjeto.getValor().insertar(correlacion[iterador], Simbolo(elemento.getTipo(), elemento.getValor(), 0, 0))
+                            iterador += 1
+                        return Expresion(simbolo.getTipo(), nuevoObjeto.getValor())
                     else:
                         # Reportar error
                         print('No se encontro la funcion')
@@ -523,26 +571,10 @@ class Semantico():
                 resultadoExpresion = self.resolverExpresion(hijo, entorno)
                 if(resultadoExpresion.getTipo() != EnumTipo.error):
                     if resultadoExpresion.getTipo() == EnumTipo.arreglo:
-                        cadena = self.concatItems(resultadoExpresion)
+                        cadena += self.concatItems(resultadoExpresion)
                     else:
-                        cadena = str(resultadoExpresion.getValor())
+                        cadena += str(resultadoExpresion.getValor())
         self.consola.append(cadena)
-
-    def concatItems(self, simbolo):
-        retorno = ""
-        for sim in simbolo.getValor():
-            if sim.getTipo() == EnumTipo.arreglo:
-                cadena = "[" + self.concatItems(sim) + "]"
-                if len(retorno) == 0:
-                    retorno = cadena
-                else:
-                    retorno = retorno + ", " + cadena
-            else:
-                if len(retorno) == 0:
-                    retorno = str(sim.getValor())
-                else:
-                    retorno = retorno + ", " + str(sim.getValor())
-        return retorno
 
     def ejecutarPrint(self, root, entorno):
         for hijo in root.hijos:
@@ -590,6 +622,29 @@ class Semantico():
                     posiciones = self.ejecutarObtenerDimension(root.getHijo(1), entorno)
                     if posiciones != None:
                         return self.obtenerPosicionArreglo(posiciones, simbolo)
+            elif((len(root.hijos) == 2) and (root.getHijo(1).getNombre() == "ACCESOFS")):
+                nombreVariable = root.getHijo(0).getValor()
+                simbolo = entorno.buscar(nombreVariable)
+                if simbolo != None:
+                    if ((simbolo.getTipo() == EnumTipo.mutable) or (simbolo.getTipo() == EnumTipo.nomutable)):
+                        temporal = simbolo
+                        for hijo in root.getHijo(1).hijos:
+                            if hijo.getValor() != ".":
+                                if ((simbolo.getTipo() == EnumTipo.mutable) or (simbolo.getTipo() == EnumTipo.nomutable)):
+                                    temporal = temporal.getValor().buscar(hijo.getValor())
+                                else:
+                                    temporal = None
+                                    break
+                        if temporal != None:
+                            return Expresion(temporal.getTipo(), temporal.getValor())
+                        else:
+                            return Expresion(EnumTipo.error, 'Se esperaba un struct')
+                    else:
+                        # Reportar error
+                        print('Se esperaba un struct')
+                else:
+                    # Reportar error
+                    print('Hay algun error')
         if(root.getNombre() == "RESTA"):
             resultadoPrimero = self.resolverExpresion(root.getHijo(0), entorno)
             resultadoSegundo = self.resolverExpresion(root.getHijo(2), entorno)
@@ -765,8 +820,11 @@ class Semantico():
         if(root.getNombre() == "IDENTIFICADOR"):
             return self.obtenerValorIdentificador(root, entorno, root.getLinea(), root.getColumna())
         if(root.getNombre() == "LLAMADAFUNCION"):
-            self.ejecutarLlamadaFuncion(root, entorno)
-            return self.retorno
+            retorno = self.ejecutarLlamadaFuncion(root, entorno)
+            if retorno == 1:
+                return self.retorno
+            else:
+                return retorno
 
     def obtenerValorIdentificador(self, root, entorno, linea, columna):
         simbolo = entorno.buscar(str(root.getValor()))
@@ -1254,3 +1312,52 @@ class Semantico():
             return Expresion(EnumTipo.boleano, not primero.getValor())
         else:
             return Expresion(EnumTipo.error, Error(linea, columna, "Semantico", "Operacion Not no definida para el tipo " + str(primero.getTipo())))
+
+    def imprimirEntorno(self, entorno):
+        for key in entorno.tabla:
+            simbolo = entorno.tabla[key]
+            if simbolo.getTipo() == EnumTipo.error:
+                print('Entorno: ' + entorno.getNombre() +' Nombre: ' + key + ' Tipo: ' + str(simbolo.getTipo()) + ' Valor: ' + str(simbolo.getValor().getError()) + ' Fila: ' + simbolo.getFila() + ' Columna: ' + simbolo.getColumna())
+            elif simbolo.getTipo() == EnumTipo.mutable or simbolo.getTipo() == EnumTipo.nomutable:
+                cadena = "{" + self.concatAtributos(simbolo) + "}"
+                print('Entorno: ' + entorno.getNombre() +' Nombre: ' + key + ' Tipo: ' + str(simbolo.getTipo()) + ' Valor: ' + cadena + ' Fila: ' + simbolo.getFila() + ' Columna: ' + simbolo.getColumna())
+            elif simbolo.getTipo() == EnumTipo.arreglo:
+                cadena = "[" + self.concatItems(simbolo) + "]"
+                print('Entorno: ' + entorno.getNombre() +' Nombre: ' + key + ' Tipo: ' + str(simbolo.getTipo()) + ' Valor: ' + cadena + ' Fila: ' + simbolo.getFila() + ' Columna: ' + simbolo.getColumna())
+            elif simbolo.getTipo() == EnumTipo.funcion:
+                print('Entorno: ' + entorno.getNombre() +' Nombre: ' + key + ' Tipo: ' + str(simbolo.getTipo()) + ' Valor: ' + ' Fila: ' + simbolo.getFila() + ' Columna: ' + simbolo.getColumna())
+                self.imprimirEntorno(simbolo.getValor().getEntorno())
+            else:
+                print('Entorno: ' + entorno.getNombre() +' Nombre: ' + key + ' Tipo: ' + str(simbolo.getTipo()) + ' Valor: ' + str(simbolo.getValor()) + ' Fila: ' + simbolo.getFila() + ' Columna: ' + simbolo.getColumna())
+
+    def concatAtributos(self, simbolo):
+        retorno = ""
+        ent = simbolo.getValor()
+        for item in ent.tabla:
+            if ((simbolo.getTipo == EnumTipo.mutable) or (simbolo.getTipo == EnumTipo.nomutable)):
+                if len(retorno) == 0:
+                    retorno = str(item)
+                else:
+                    retorno = retorno + ", " + str(item)
+            else:
+                if len(retorno) == 0:
+                    retorno = str(item)
+                else:
+                    retorno = retorno + ", " + str(item)
+        return retorno
+
+    def concatItems(self, simbolo):
+        retorno = ""
+        for sim in simbolo.getValor():
+            if sim.getTipo() == EnumTipo.arreglo:
+                cadena = "[" + self.concatItems(sim) + "]"
+                if len(retorno) == 0:
+                    retorno = cadena
+                else:
+                    retorno = retorno + ", " + cadena
+            else:
+                if len(retorno) == 0:
+                    retorno = str(sim.getValor())
+                else:
+                    retorno = retorno + ", " + str(sim.getValor())
+        return retorno
