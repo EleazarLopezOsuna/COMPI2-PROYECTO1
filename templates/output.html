@@ -3,11 +3,17 @@
 
 {% block content %}
 <main role="main" class="container p-5">
-    <form>
+    <form action="#" method="POST">
         <div class="mb-3">
             <label for="output" class="form-label">Output:</label>
             <textarea class="form-control" id="output" cols="30" rows="10" readonly>{{input}}</textarea>
         </div>
+        <div class="mb-3" hidden>
+            <label for="codigoArbol" class="form-label">Output:</label>
+            <textarea class="form-control" name = "codigoArbol" id="codigoArbol" cols="30" rows="10" readonly>{{input}}</textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Generar Arbol</button>
+    </form>
     </form>
 </main>
 {% endblock %}

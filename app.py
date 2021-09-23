@@ -1,6 +1,8 @@
 #python -m flask run --reload --debugger
 from flask import Flask, redirect, url_for, render_template, request
+from graphviz import dot
 from Analizador.grammar import parse
+import graphviz
 
 app = Flask(__name__)
 
@@ -15,19 +17,29 @@ def analyze():
         tmp_val = str(tmp_val).replace('local ', '')
         return redirect(url_for("output"))
     else:
-        f = open("./entrada.txt", "r")
-        entrada = f.read()
         return render_template('analyze.html', initial="")
 
 @app.route("/")
 def home():
     return render_template("index.html")
 
-@app.route('/output')
+@app.route('/output', methods=["POST", "GET"])
 def output():
     global tmp_val
     result = parse(tmp_val)
-    return render_template('output.html', input=result)
+    if request.method == "POST":
+        global dot
+        dot = request.form["codigoArbol"]
+        #dot = graphviz.Source(request.form["codigoArbol"])
+        return redirect(url_for("grafo"))
+    else:
+        return render_template('output.html', input=result)
+
+@app.route('/grafo')
+def grafo():
+    global dot
+    grafico = graphviz.Source(dot)
+    return grafico.render('test-output/holy-grenade.gv', view=True) 
 
 if __name__ == "__main__":
     app.run()
