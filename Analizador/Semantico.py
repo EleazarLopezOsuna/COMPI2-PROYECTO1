@@ -75,11 +75,9 @@ class Semantico():
                 subPrograma = SubPrograma(instruccionesFuncion, entornoFuncion[0], root.getHijo(1).getLinea(), root.getHijo(1).getColumna(), entornoFuncion[1])
                 entorno.insertar(nombreFuncion, Simbolo(EnumTipo.funcion, subPrograma, root.getHijo(1).getLinea(), root.getHijo(1).getColumna()))
             else:
-                # Reportar error
-                print('El identificador ' + str(nombreFuncion) + ' ya esta definido')
+                self.errores.append(root.getHijo(1).getLinea(), root.getHijo(1).getColumna(), Error('Semantico'), 'El identificador ' + str(nombreFuncion) + ' ya esta definido')
         else:
-            # Reportar error
-            print('Se encontro un parametro repetido')
+            self.errores.append(Error(root.getHijo(1).getLinea(), root.getHijo(1).getColumna(), 'Semantico', 'Se encontro un parametro repetido'))
 
     def definirParametrosFuncion(self, root, entorno, nombreFuncion):
         retorno = Entorno(entorno, nombreFuncion)
@@ -127,8 +125,7 @@ class Semantico():
                             entorno.insertar(nombreVariable, Simbolo(expresion.getTipo(), expresion.getValor(), root.getHijo(1).getLinea(), root.getHijo(1).getColumna()))
                             self.recorrer(root.getHijo(4), entorno)
                     else:
-                        # Reportar error
-                        print("Se encontro un error en listaExpresiones")
+                        self.errores.append(Error(root.getHijo(1).getLinea(), root.getHijo(1).getColumna(), 'Semantico', "Se encontro un error en listaExpresiones"))
             elif(len(root.getHijo(3).hijos) == 1):
                 expresion = self.resolverExpresion(root.getHijo(3), entorno)
                 if expresion.getTipo() != EnumTipo.error:
@@ -143,11 +140,9 @@ class Semantico():
                                 entorno.insertar(nombreVariable, Simbolo(i.getTipo(), i.getValor(), root.getHijo(1).getLinea(), root.getHijo(1).getColumna()))
                                 self.recorrer(root.getHijo(4), entorno)
                     else:
-                        # Reportar Error
-                        print('Se esperaba rango(a:b), arreglo([a,b,c,..] o cadena')
+                        self.errores.append(Error(root.getHijo(1).getLinea(), root.getHijo(1).getColumna(), 'Semantico', 'Se esperaba rango(a:b), arreglo([a,b,c,..] o cadena'))
                 else:
-                    # Reportar Error
-                    print('Se encontro un error ccc')
+                    self.errores.append(expresion.getValor())
                 
     def ejecutarWhile(self, root, entorno):
         condicion = self.resolverExpresion(root.getHijo(1), entorno)
@@ -225,11 +220,9 @@ class Semantico():
                 if valorVariableNueva.getTipo() == tipoVariableNueva:
                     entorno.insertar(nombreVariableNueva, Simbolo(valorVariableNueva.getTipo(), valorVariableNueva.getValor(), root.getHijo(0).getLinea(), root.getHijo(0).getColumna()))
                 else:
-                    # Reportar Error
-                    print('Los tipos ' + str(tipoVariableNueva) + ' y ' + str(valorVariableNueva.getTipo()) + ' no coinciden')
+                    self.errores.append(Error(root.getHijo(0).getLinea(), root.getHijo(0).getColumna(), 'Semantico', 'Los tipos ' + str(tipoVariableNueva) + ' y ' + str(valorVariableNueva.getTipo()) + ' no coinciden'))
             else:
-                # Reportar Error
-                print('Se esperaba un tipo primitivo y se encontro ' + str(root.getHijo(4).getHijo(0).getValor()))
+                self.errores.append(Error(root.getHijo(0).getLinea(), root.getHijo(0).getColumna(), 'Semantico', 'Se esperaba un tipo primitivo y se encontro ' + str(root.getHijo(4).getHijo(0).getValor())))
         elif(len(root.hijos) == 4):
             if(root.getHijo(2).getNombre() == "EXPRESION"):
                 nombreVariableNueva = str(root.getHijo(0).getValor())
@@ -256,14 +249,12 @@ class Semantico():
                                     temporal = None
                                     break
                         if temporal != None:
-                            simboloModificar = Simbolo(valorVariable.getTipo(), valorVariable.getValor(), root.getHijo(0).getLinea(), root.getHijo(0).getColumna)
+                            simboloModificar = Simbolo(valorVariable.getTipo(), valorVariable.getValor(), root.getHijo(0).getLinea(), root.getHijo(0).getColumna())
                             entornoModificar.modificar(nombreModificar, simboloModificar)
                         else:
-                            # Reportar error
-                            print('Se esperaba un struct')
+                            self.errores.append(Error(root.getHijo(0).getLinea(), root.getHijo(0).getColumna(), 'Semantico', 'Se esperaba un struct'))
                     else:
-                        # Reportar error
-                        print('Se esperaba un struct')
+                        self.errores.append(Error(root.getHijo(0).getLinea(), root.getHijo(0).getColumna(), 'Semantico', 'Se esperaba un struct'))
             elif(root.getHijo(1).getNombre() == "DIMENSION"):
                 simbolo = entorno.isArreglo(nombreVariableNueva)
                 dimension = root.getHijo(1)
@@ -273,8 +264,7 @@ class Semantico():
                     if posiciones != None:
                         self.asignarPosicionArreglo(posiciones, simbolo, nombreVariableNueva, resultadoExpresion)
                 else:
-                    # Reportar Error
-                    print('Se esperaba un arreglo')
+                    self.errores.append(Error(0, 0, 'Semantico', 'Se esperaba un arreglo'))
         elif(len(root.hijos) == 2):
             nombreVariableNueva = str(root.getHijo(0).getValor())
             entorno.insertar(nombreVariableNueva, Simbolo(EnumTipo.nulo, "",  root.getHijo(0).getLinea(), root.getHijo(0).getColumna()))
@@ -286,11 +276,9 @@ class Semantico():
                     simbolo.getValor()[posiciones[0]] = Simbolo(expresion.getTipo(), expresion.getValor(), simbolo.getFila(), simbolo.getColumna())
                     return simbolo
                 else:
-                    # Reportar Error
-                    print('Index fuera de rango')
+                    self.errores.append(Error(simbolo.getFila(), simbolo.getColumna(), 'Semantico', 'Index fuera de rango'))
             else:
-                # Reportar Error
-                print('Se esperaba arreglo')
+                self.errores.append(Error(simbolo.getFila(), simbolo.getColumna(), 'Semantico', 'Se esperaba un arreglo'))
         else:
             if simbolo.getTipo() == EnumTipo.arreglo:
                 if  int(posiciones[0]) < len(simbolo.getValor()):
@@ -300,11 +288,9 @@ class Semantico():
                     simbolo.getValor()[posicionAnterior] = self.asignarPosicionArreglo(nuevoPosiciones, simbolo.getValor()[posicionAnterior], nombreVariableNueva, expresion)
                     return simbolo
                 else:
-                    # Reportar Error
-                    print('Index fuera de rango')
+                    self.errores.append(Error(simbolo.getFila(), simbolo.getColumna(), 'Semantico', 'Index fuera de rango'))
             else:
-                # Reportar Error
-                print('Se esperaba arreglo')
+                self.errores.append(Error(simbolo.getFila(), simbolo.getColumna(), 'Semantico', 'Se esperaba un arreglo'))
         return None
     
     def hacerPushPosicionArreglo(self, posiciones, simbolo, expresion):
@@ -314,11 +300,9 @@ class Semantico():
                     simbolo.getValor()[posiciones[0]].getValor().append(Simbolo(expresion.getTipo(), expresion.getValor(), simbolo.getFila(), simbolo.getColumna()))
                     return simbolo
                 else:
-                    # Reportar Error
-                    print('Index fuera de rango')
+                    self.errores.append(Error(simbolo.getFila(), simbolo.getColumna(), 'Semantico', 'Index fuera de rango'))
             else:
-                # Reportar Error
-                print('Se esperaba arreglo')
+                self.errores.append(Error(simbolo.getFila(), simbolo.getColumna(), 'Semantico', 'Se esperaba un arreglo'))
         else:
             if simbolo.getTipo() == EnumTipo.arreglo:
                 if  int(posiciones[0]) < len(simbolo.getValor()):
@@ -328,11 +312,9 @@ class Semantico():
                     simbolo.getValor()[posicionAnterior] = self.hacerPushPosicionArreglo(nuevoPosiciones, simbolo.getValor()[posicionAnterior], expresion)
                     return simbolo
                 else:
-                    # Reportar Error
-                    print('Index fuera de rango')
+                    self.errores.append(Error(simbolo.getFila(), simbolo.getColumna(), 'Semantico', 'Index fuera de rango'))
             else:
-                # Reportar Error
-                print('Se esperaba arreglo')
+                self.errores.append(Error(simbolo.getFila(), simbolo.getColumna(), 'Semantico', 'Se esperaba un arreglo'))
         return None
 
     def hacerPopPosicionArreglo(self, posiciones, simbolo):
@@ -342,11 +324,9 @@ class Semantico():
                     resultado = simbolo.getValor()[posiciones[0]].getValor().pop()
                     return simbolo, Expresion(resultado.getTipo(), resultado.getValor())
                 else:
-                    # Reportar Error
-                    print('Index fuera de rango')
+                    self.errores.append(Error(simbolo.getFila(), simbolo.getColumna(), 'Semantico', 'Index fuera de rango'))
             else:
-                # Reportar Error
-                print('Se esperaba arreglo')
+                self.errores.append(Error(simbolo.getFila(), simbolo.getColumna(), 'Semantico', 'Se esperaba un arreglo'))
         else:
             if simbolo.getTipo() == EnumTipo.arreglo:
                 if  int(posiciones[0]) < len(simbolo.getValor()):
@@ -357,11 +337,9 @@ class Semantico():
                     simbolo.getValor()[posicionAnterior] = resultado[0]
                     return simbolo, resultado[1]
                 else:
-                    # Reportar Error
-                    print('Index fuera de rango')
+                    self.errores.append(Error(simbolo.getFila(), simbolo.getColumna(), 'Semantico', 'Index fuera de rango'))
             else:
-                # Reportar Error
-                print('Se esperaba arreglo')
+                self.errores.append(Error(simbolo.getFila(), simbolo.getColumna(), 'Semantico', 'Se esperaba un arreglo'))
         return None
 
     def obtenerPosicionArreglo(self, posiciones, simbolo):
@@ -394,12 +372,10 @@ class Semantico():
                     if expresion.getTipo() == EnumTipo.entero:
                         posiciones.append(int(expresion.getValor()) - 1)
                     else:
-                        # Reportar Error
-                        print('Se esperaba tipo entero')
+                        self.errores.append(Error(0, 0, 'Semantico', 'Se esperaba tipo entero'))
                         return None
                 else:
-                    # Reportar Error
-                    print('Se encontro un error ddd')
+                    self.errores.append(expresion.getValor())
                     return None
         return posiciones
 
@@ -450,11 +426,9 @@ class Semantico():
                             expresion = self.resolverExpresion(root.getHijo(5), entorno)
                             self.hacerPushPosicionArreglo(posiciones, simbolo, expresion)
                         else:
-                            # Reportar error
-                            print('Se esperaba tipo arreglo')
+                           self.errores.append(Error(0, 0, 'Semantico', 'Se esperaba tipo arreglo'))
                     else:
-                        # Reportar error
-                        print('Hubo un error')
+                        self.errores.append(Error(0, 0, 'Semantico', 'Hubo un error'))
             else:
                 simbolo = entorno.buscar(nombreArreglo)
                 if simbolo != None:
@@ -462,11 +436,9 @@ class Semantico():
                         expresion = self.resolverExpresion(root.getHijo(5), entorno)
                         simbolo.getValor().append(Simbolo(expresion.getTipo(), expresion.getValor(), simbolo.getFila(), simbolo.getColumna()))
                     else:
-                        # Reportar error
-                        print('Se esperaba tipo arreglo')
+                        self.errores.append(Error(0, 0, 'Semantico', 'Se esperaba tipo arreglo'))
                 else:
-                    # Reportar error
-                    print('Hubo un error')
+                    self.errores.append(Error(0, 0, 'Semantico', 'Hubo un error'))
         else:
             nombreFuncion = root.getHijo(0).getValor()
             simbolo = entorno.buscar(nombreFuncion)
@@ -478,8 +450,7 @@ class Semantico():
                         funcion = simbolo.getValor()
                         self.recorrer(funcion.getRoot(), funcion.getEntorno())
                 else:
-                    # Reportar error
-                    print('No se encontro la funcion')
+                    self.errores.append(Error(root.getHijo(0).getLinea(), root.getHijo(0).getColumna(), 'Semantico', 'No se encontro la funcion'))
             if (len(root.hijos) == 3):
                 # No tiene parametros
                 simbolo = entorno.buscar(nombreFuncion)
@@ -489,8 +460,7 @@ class Semantico():
                         funcion = simbolo.getValor()
                         self.recorrer(funcion.getRoot(), funcion.getEntorno())
                 else:
-                    # Reportar error
-                    print('No se encontro la funcion')
+                    self.errores.append(Error(root.getHijo(0).getLinea(), root.getHijo(0).getColumna(), 'Semantico', 'No se encontro la funcion'))
             elif(len(root.hijos) == 5):
                 # Tiene parametros
                 parametros = self.obtenerParametros(root.getHijo(2), entorno)
@@ -501,11 +471,9 @@ class Semantico():
                         self.recorrer(subPrograma.getValor().getRoot(), subPrograma.getValor().getEntorno())
                         subPrograma.getValor().regresarReferencias(entorno, parametros)
                     else:
-                        # Reportar error
-                        print('No se encontro la funcion')
+                        self.errores.append(Error(root.getHijo(0).getLinea(), root.getHijo(0).getColumna(), 'Semantico', 'No se encontro la funcion'))
                 else:
-                    # Reportar error
-                    print('Se encontro un error aaa')
+                    self.errores.append(Error(0, 0, 'Semantico', 'Hubo un error'))
             else:
                 # funcion(p1, p2, p3, ...)
                 nombreFuncion = root.getHijo(0).getValor()
@@ -527,8 +495,7 @@ class Semantico():
                                 if expresion.getTipo() != EnumTipo.error:
                                     atributos.append(expresion)
                                 else:
-                                    # Reportar Error
-                                    print('Se encontro un error')
+                                    self.errores.append(expresion.getValor())
                         nuevoObjeto = copy.deepcopy(simbolo)
                         iterador = 0
                         correlacion = {}
@@ -541,11 +508,9 @@ class Semantico():
                             iterador += 1
                         return Expresion(simbolo.getTipo(), nuevoObjeto.getValor())
                     else:
-                        # Reportar error
-                        print('No se encontro la funcion')
+                        self.errores.append(Error(root.getHijo(0).getLinea(), root.getHijo(0).getColumna(), 'Semantico', 'No se encontro la funcion'))
                 else:
-                    # Reportar error
-                    print('Se encontro un error bbb')
+                    self.errores.append(Error(0, 0, 'Semantico', 'Hubo un error'))
 
     def ejecutarFuncion(self, root, entorno):
         nombreFuncion = root.getHijo(0).getValor()
@@ -558,8 +523,7 @@ class Semantico():
                     funcion = simbolo.getValor()
                     self.recorrer(funcion.getRoot(), funcion.getEntorno())
             else:
-                # Reportar error
-                print('No se encontro la funcion')
+                self.errores.append(Error(root.getHijo(0).getLinea(), root.getHijo(0).getColumna(), 'Semantico', 'No se encontro la funcion'))
         else:
             # Tiene parametros
             print('Tiene parametros')
@@ -612,8 +576,7 @@ class Semantico():
                             simbolo = Simbolo(expresion.getTipo(), expresion.getValor(), -1, -1)
                             retorno.valor.append(simbolo)
                         else:
-                            # Reportar error
-                            print('Se encontro error')
+                            self.errores.append(expresion.getValor())
                 return retorno
             elif((len(root.hijos) == 2) and (root.getHijo(1).getNombre() == "DIMENSION")):
                 nombreVariableNueva = root.getHijo(0).getValor()
@@ -640,11 +603,9 @@ class Semantico():
                         else:
                             return Expresion(EnumTipo.error, 'Se esperaba un struct')
                     else:
-                        # Reportar error
-                        print('Se esperaba un struct')
+                        self.errores.append(Error(root.getHijo(0).getLinea(), root.getHijo(0).getColumna(), 'Semantico', 'Se esperaba un struct'))
                 else:
-                    # Reportar error
-                    print('Hay algun error')
+                    self.errores.append(Error(root.getHijo(0).getLinea(), root.getHijo(0).getColumna(), 'Semantico', 'Hubo un error'))
         if(root.getNombre() == "RESTA"):
             resultadoPrimero = self.resolverExpresion(root.getHijo(0), entorno)
             resultadoSegundo = self.resolverExpresion(root.getHijo(2), entorno)
@@ -786,7 +747,6 @@ class Semantico():
                 if(expresion.getTipo() == EnumTipo.arreglo):
                     return Expresion(EnumTipo.entero, len(expresion.getValor()))
                 else:
-                    # Reportar Error
                     return Expresion(EnumTipo.error, "Se esperaba un arreglo, se obtuvo " + str(expresion.getTipo()))
             else:
                 return expresion
@@ -800,11 +760,9 @@ class Semantico():
                         if simbolo.getTipo() == EnumTipo.arreglo:
                             return self.hacerPopPosicionArreglo(posiciones, simbolo)[1]
                         else:
-                            # Reportar error
-                            print('Se esperaba tipo arreglo')
+                            self.errores.append(Error(0, 0, 'Semantico', 'Se esperaba tipo arreglo'))
                     else:
-                        # Reportar error
-                        print('Hubo un error')
+                        self.errores.append(Error(0, 0, 'Semantico', 'Hubo un error'))
             else:
                 simbolo = entorno.buscar(nombreArreglo)
                 if simbolo != None:
@@ -812,11 +770,9 @@ class Semantico():
                         retornar = simbolo.getValor().pop()
                         return Expresion(retornar.getTipo(), retornar.getValor())
                     else:
-                        # Reportar error
-                        print('Se esperaba tipo arreglo')
+                        self.errores.append(Error(0, 0, 'Semantico', 'Se esperaba tipo arreglo'))
                 else:
-                    # Reportar error
-                    print('Hubo un error')
+                    self.errores.append(Error(0, 0, 'Semantico', 'Hubo un error'))
         if(root.getNombre() == "IDENTIFICADOR"):
             return self.obtenerValorIdentificador(root, entorno, root.getLinea(), root.getColumna())
         if(root.getNombre() == "LLAMADAFUNCION"):

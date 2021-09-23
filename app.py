@@ -24,6 +24,7 @@ def home():
     return render_template("index.html")
 
 headingsSimbolos = ("Entorno", "Nombre", "Tipo", "Valor", "Fila", "Columna")
+headingsErrores = ("Tipo", "Error", "Fila", "Columna")
 
 @app.route('/output', methods=["POST", "GET"])
 def output():
@@ -33,7 +34,9 @@ def output():
     if request.method == "POST":
         return redirect(url_for("grafo"))
     else:
-        return render_template('output.html', input=result[0], headings=headingsSimbolos, data=result[2])
+        if result[3] == '':
+            return render_template('output.html', input=result[0], headings=headingsErrores, data=result[2], codigo=result[3])
+        return render_template('output.html', input=result[0], headings=headingsSimbolos, data=result[2], codigo=result[3])
 
 @app.route('/grafo')
 def grafo():

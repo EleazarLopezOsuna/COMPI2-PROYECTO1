@@ -6,6 +6,7 @@ from Modelos.NodoSintactico import NodoSintactico
 import sys
 import os
 import re
+from Modelos.Error import Error
 sys.setrecursionlimit(10000)
 
 errores = []
@@ -293,7 +294,8 @@ def p_instruccion_13(t):
 def p_error(t):
     'instruccion    : error PUNTOCOMA'
     global contador
-    #Agregar error
+    errores.append(Error(t.lexer.lineno, find_column(input, t), "Lexico", "Error léxico: " + t.value[0]))
+    t.lexer.skip(1)
 
 def p_asignacionGlobal(t):
     'asignacionGlobal   : resGlobal asignacion'
@@ -1429,16 +1431,29 @@ def parse(inp):
     root = parser.parse(inp)
     resultado = arbol.getDot(root)
     analisisSemantico = Semantico(root)
-    analisisSemantico.iniciarAnalisisSemantico()
-    cadenaConsola = ""
-    for consola in analisisSemantico.consola:
-        cadenaConsola += str(consola) + '\n'
     retorno = []
-    for entorno in analisisSemantico.entornos:
-        nuevo = imprimirEntorno(entorno)
-        for item in nuevo:
-            retorno.append(item)
-    return cadenaConsola, resultado[1], retorno
+    cadenaConsola = ""
+    if len(errores) == 0:
+        analisisSemantico.iniciarAnalisisSemantico()
+        if len(analisisSemantico.errores) == 0:
+            for consola in analisisSemantico.consola:
+                cadenaConsola += str(consola) + '\n'
+            for entorno in analisisSemantico.entornos:
+                nuevo = imprimirEntorno(entorno)
+                for item in nuevo:
+                    retorno.append(item)
+            return cadenaConsola, resultado[1], retorno, resultado[0]
+        else:
+            retorno = imprimirErrores(analisisSemantico.errores)
+            return cadenaConsola, '', retorno, ''
+    retorno = imprimirErrores(errores)
+    return cadenaConsola, '', retorno, ''
+
+def imprimirErrores(errores):
+    retorno = []
+    for error in errores:
+        retorno.append([error.getTipo(), error.getError(), error.getFila(), error.getColumna()])
+    return retorno
 
 def imprimirEntorno(entorno):
     retorno = []
