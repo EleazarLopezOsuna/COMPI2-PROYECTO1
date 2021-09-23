@@ -23,23 +23,22 @@ def analyze():
 def home():
     return render_template("index.html")
 
+headingsSimbolos = ("Entorno", "Nombre", "Tipo", "Valor", "Fila", "Columna")
+
 @app.route('/output', methods=["POST", "GET"])
 def output():
     global tmp_val
     result = parse(tmp_val)
+    app.c = result[1]
     if request.method == "POST":
-        global dot
-        dot = request.form["codigoArbol"]
-        #dot = graphviz.Source(request.form["codigoArbol"])
         return redirect(url_for("grafo"))
     else:
-        return render_template('output.html', input=result)
+        return render_template('output.html', input=result[0], headings=headingsSimbolos, data=result[2])
 
 @app.route('/grafo')
 def grafo():
-    global dot
-    grafico = graphviz.Source(dot)
-    return grafico.render('test-output/holy-grenade.gv', view=True) 
+    dot = app.c
+    return dot.pipe().decode('utf-8')
 
 if __name__ == "__main__":
     app.run()

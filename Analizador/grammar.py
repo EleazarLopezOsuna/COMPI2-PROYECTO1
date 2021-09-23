@@ -1430,30 +1430,36 @@ def parse(inp):
     resultado = arbol.getDot(root)
     analisisSemantico = Semantico(root)
     analisisSemantico.iniciarAnalisisSemantico()
-    print("-------Consola-------")
+    cadenaConsola = ""
     for consola in analisisSemantico.consola:
-        print(str(consola))
-    print("-------Variables-------")
+        cadenaConsola += str(consola) + '\n'
+    retorno = []
     for entorno in analisisSemantico.entornos:
-        imprimirEntorno(entorno)
-    return resultado
+        nuevo = imprimirEntorno(entorno)
+        for item in nuevo:
+            retorno.append(item)
+    return cadenaConsola, resultado[1], retorno
 
 def imprimirEntorno(entorno):
+    retorno = []
     for key in entorno.tabla:
         simbolo = entorno.tabla[key]
         if simbolo.getTipo() == EnumTipo.error:
-            print('Entorno: ' + entorno.getNombre() +' Nombre: ' + key + ' Tipo: ' + str(simbolo.getTipo()) + ' Valor: ' + str(simbolo.getValor().getError()) + ' Fila: ' + simbolo.getFila() + ' Columna: ' + simbolo.getColumna())
+            retorno.append([entorno.getNombre(), key, str(simbolo.getTipo()).replace('EnumTipo.', ''), str(simbolo.getValor().getError()), simbolo.getFila()], [simbolo.getColumna()])
         elif simbolo.getTipo() == EnumTipo.mutable or simbolo.getTipo() == EnumTipo.nomutable:
             cadena = "{" + concatAtributos(simbolo) + "}"
-            print('Entorno: ' + entorno.getNombre() +' Nombre: ' + key + ' Tipo: ' + str(simbolo.getTipo()) + ' Valor: ' + cadena + ' Fila: ' + simbolo.getFila() + ' Columna: ' + simbolo.getColumna())
+            retorno.append([entorno.getNombre(), key, str(simbolo.getTipo()).replace('EnumTipo.', ''), cadena, simbolo.getFila(), simbolo.getColumna()])
         elif simbolo.getTipo() == EnumTipo.arreglo:
             cadena = "[" + concatItems(simbolo) + "]"
-            print('Entorno: ' + entorno.getNombre() +' Nombre: ' + key + ' Tipo: ' + str(simbolo.getTipo()) + ' Valor: ' + cadena + ' Fila: ' + simbolo.getFila() + ' Columna: ' + simbolo.getColumna())
+            retorno.append([entorno.getNombre(), key, str(simbolo.getTipo()).replace('EnumTipo.', ''), cadena, simbolo.getFila(), simbolo.getColumna()])
         elif simbolo.getTipo() == EnumTipo.funcion:
-            print('Entorno: ' + entorno.getNombre() +' Nombre: ' + key + ' Tipo: ' + str(simbolo.getTipo()) + ' Valor: ' + ' Fila: ' + simbolo.getFila() + ' Columna: ' + simbolo.getColumna())
-            imprimirEntorno(simbolo.getValor().getEntorno())
+            retorno.append([entorno.getNombre(), key, str(simbolo.getTipo()).replace('EnumTipo.', ''), ' ', simbolo.getFila(), simbolo.getColumna()])
+            nuevo = imprimirEntorno(simbolo.getValor().getEntorno())
+            for item in nuevo:
+                retorno.append(item)
         else:
-            print('Entorno: ' + entorno.getNombre() +' Nombre: ' + key + ' Tipo: ' + str(simbolo.getTipo()) + ' Valor: ' + str(simbolo.getValor()) + ' Fila: ' + simbolo.getFila() + ' Columna: ' + simbolo.getColumna())
+            retorno.append([entorno.getNombre(), key, str(simbolo.getTipo()).replace('EnumTipo.', ''), str(simbolo.getValor()), simbolo.getFila(), simbolo.getColumna()])
+    return retorno
 
 def concatItems(simbolo):
     retorno = ""
